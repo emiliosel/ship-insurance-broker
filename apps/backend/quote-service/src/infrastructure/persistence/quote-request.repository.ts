@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { QuoteRequest } from '../../domain/quote-request.entity';
+import { QuoteRequest } from '../../domain/entities/quote-request.entity';
 import { VoyageData } from '../../domain/types';
+import { IQuoteRequestRepository } from '../../domain/ports/quote-request.repository.interface';
 
 @Injectable()
-export class QuoteRequestRepository {
+export class QuoteRequestRepository implements IQuoteRequestRepository {
   constructor(
     @InjectRepository(QuoteRequest)
     private readonly repository: Repository<QuoteRequest>,

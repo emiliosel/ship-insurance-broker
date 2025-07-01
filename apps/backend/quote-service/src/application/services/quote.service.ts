@@ -1,21 +1,20 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { QuoteRequestRepository } from './repositories/quote-request.repository';
-import { RabbitMQService } from '../rabbitmq/rabbitmq.service';
-import { VoyageData, QuoteRequestStatus } from '../domain/types';
-import { QuoteRequest } from '../domain/quote-request.entity';
+import { Injectable } from '@nestjs/common';
+import { VoyageData } from '../../domain/types';
+import { QuoteRequest } from '../../domain/entities/quote-request.entity';
+import { RabbitMQService } from '../../infrastructure/messaging/rabbitmq.service';
+import { QuoteRequestRepository } from '@/infrastructure/persistence/quote-request.repository';
 
 @Injectable()
 export class QuoteService {
   constructor(
     private readonly quoteRequestRepository: QuoteRequestRepository,
-    private readonly rabbitMQService: RabbitMQService,
+    private readonly messagingService: RabbitMQService,
   ) {}
 
   async createQuoteRequest(requesterId: string, voyageData: VoyageData): Promise<QuoteRequest> {
     const quoteRequest = await this.quoteRequestRepository.createQuoteRequest(requesterId, voyageData);
     
-    // Emit event for newly created quote request
-    await this.rabbitMQService.emit('quote_request.created', {
+    await this.messagingService.emit('quote_request.created', {
       quoteRequestId: quoteRequest.id,
       requesterId: quoteRequest.requesterId,
       voyageData: quoteRequest.voyageData,
@@ -28,22 +27,13 @@ export class QuoteService {
     return this.quoteRequestRepository.findByRequesterId(requesterId);
   }
 
-  async findWithResponderAssignments(quoteRequestId: string): Promise<QuoteRequest> {
-    const quoteRequest = await this.quoteRequestRepository.findWithResponderAssignments(quoteRequestId);
-    if (!quoteRequest) {
-      throw new NotFoundException(`Quote request with ID ${quoteRequestId} not found`);
-    }
-    return quoteRequest;
-  }
-
   async assignResponder(quoteRequestId: string, responderId: string): Promise<QuoteRequest> {
-    const quoteRequest = await this.findWithResponderAssignments(quoteRequestId);
+    const quoteRequest = await this.getQuoteRequestById(quoteRequestId);
     
     quoteRequest.assignResponder(responderId);
     const updatedQuoteRequest = await this.quoteRequestRepository.save(quoteRequest);
 
-    // Emit event for responder assignment
-    await this.rabbitMQService.emit('quote_request.responder_assigned', {
+    await this.messagingService.emit('quote_request.responder_assigned', {
       quoteRequestId,
       responderId,
     });
@@ -57,13 +47,12 @@ export class QuoteService {
     price: number, 
     comments: string
   ): Promise<QuoteRequest> {
-    const quoteRequest = await this.findWithResponderAssignments(quoteRequestId);
+    const quoteRequest = await this.getQuoteRequestById(quoteRequestId);
     
     quoteRequest.submitResponse(responderId, price, comments);
     const updatedQuoteRequest = await this.quoteRequestRepository.save(quoteRequest);
 
-    // Emit event for response submission
-    await this.rabbitMQService.emit('quote_request.response_submitted', {
+    await this.messagingService.emit('quote_request.response_submitted', {
       quoteRequestId,
       responderId,
       price,
@@ -74,14 +63,14 @@ export class QuoteService {
   }
 
   async completeQuoteRequest(quoteRequestId: string): Promise<QuoteRequest> {
-    const quoteRequest = await this.findWithResponderAssignments(quoteRequestId);
+    const quoteRequest = await this.getQuoteRequestById(quoteRequestId);
     
     quoteRequest.completeQuote();
     return this.quoteRequestRepository.save(quoteRequest);
   }
 
   async cancelQuoteRequest(quoteRequestId: string): Promise<QuoteRequest> {
-    const quoteRequest = await this.findWithResponderAssignments(quoteRequestId);
+    const quoteRequest = await this.getQuoteRequestById(quoteRequestId);
     
     quoteRequest.cancelQuote();
     return this.quoteRequestRepository.save(quoteRequest);
@@ -89,5 +78,13 @@ export class QuoteService {
 
   async findActiveQuoteRequestsByResponderId(responderId: string): Promise<QuoteRequest[]> {
     return this.quoteRequestRepository.findActiveQuoteRequestsByResponderId(responderId);
+  }
+
+  private async getQuoteRequestById(quoteRequestId: string): Promise<QuoteRequest> {
+    const quoteRequest = await this.quoteRequestRepository.findWithResponderAssignments(quoteRequestId);
+    if (!quoteRequest) {
+      throw new Error(`Quote request with ID ${quoteRequestId} not found`);
+    }
+    return quoteRequest;
   }
 }

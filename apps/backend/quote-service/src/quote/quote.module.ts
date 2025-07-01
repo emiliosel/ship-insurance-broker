@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { QuoteService } from './quote.service';
 import { QuoteController } from './quote.controller';
-import { QuoteRequest, ResponderAssignment } from './entities/quote-request.entity';
+import { QuoteService } from './quote.service';
+import { QuoteRequest } from '../domain/quote-request.entity';
+import { ResponderAssignment } from '../domain/responder-assignment.entity';
 import { QuoteRequestRepository } from './repositories/quote-request.repository';
-import { ResponderAssignmentRepository } from './repositories/responder-assignment.repository';
 import { RabbitMQModule } from '../rabbitmq/rabbitmq.module';
 
 @Module({
@@ -13,11 +13,7 @@ import { RabbitMQModule } from '../rabbitmq/rabbitmq.module';
     RabbitMQModule,
   ],
   controllers: [QuoteController],
-  providers: [
-    QuoteService,
-    QuoteRequestRepository,
-    ResponderAssignmentRepository,
-  ],
+  providers: [QuoteService, QuoteRequestRepository],
   exports: [QuoteService],
 })
 export class QuoteModule {}

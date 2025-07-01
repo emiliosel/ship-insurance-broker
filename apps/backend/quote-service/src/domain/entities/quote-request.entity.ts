@@ -1,7 +1,7 @@
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
-import { VoyageData, QuoteRequestStatus } from './types';
+import { VoyageData, QuoteRequestStatus } from '../types';
 import { ResponderAssignment } from './responder-assignment.entity';
-import { IQuoteRequest } from './interfaces';
+import { IQuoteRequest } from '../interfaces';
 
 @Entity('quote_requests')
 export class QuoteRequest implements IQuoteRequest {
@@ -32,7 +32,6 @@ export class QuoteRequest implements IQuoteRequest {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  // Domain methods
   assignResponder(responderId: string): void {
     if (this.status === QuoteRequestStatus.COMPLETED || 
         this.status === QuoteRequestStatus.CANCELLED) {

@@ -23,6 +23,7 @@
     "@nestjs/platform-express": "^10.0.0",
     "@nestjs/swagger": "^7.0.0",
     "@nestjs/typeorm": "^10.0.0",
+    "@golevelup/nestjs-rabbitmq": "6.0.1",
     "@quote-system/shared": "workspace:*",
     "amqplib": "^0.10.0",
     "class-transformer": "^0.5.1",

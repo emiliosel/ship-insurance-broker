@@ -1,7 +1,7 @@
-import { Controller, Get, Post, Body, Param, Patch, NotFoundException } from '@nestjs/common';
-import { QuoteService } from './quote.service';
-import { CreateQuoteRequestDto } from './dto/create-quote-request.dto';
-import { QuoteRequest } from '../domain/quote-request.entity';
+import { Controller, Get, Post, Body, Param, Patch } from '@nestjs/common';
+import { QuoteService } from '../../application/services/quote.service';
+import { CreateQuoteRequestDto } from '../dto/create-quote-request.dto';
+import { QuoteRequest } from '../../domain/entities/quote-request.entity';
 
 @Controller('quote-requests')
 export class QuoteController {
@@ -12,7 +12,7 @@ export class QuoteController {
     @Body() createQuoteRequestDto: CreateQuoteRequestDto,
     @Body('requesterId') requesterId: string,
   ): Promise<QuoteRequest> {
-    return this.quoteService.createQuoteRequest(requesterId, createQuoteRequestDto);
+    return this.quoteService.createQuoteRequest(requesterId, createQuoteRequestDto.toVoyageData());
   }
 
   @Post(':id/assign/:responderId')
@@ -59,14 +59,5 @@ export class QuoteController {
     @Param('responderId') responderId: string,
   ): Promise<QuoteRequest[]> {
     return this.quoteService.findActiveQuoteRequestsByResponderId(responderId);
-  }
-
-  @Get(':id')
-  async findOne(@Param('id') id: string): Promise<QuoteRequest> {
-    const quoteRequest = await this.quoteService.findWithResponderAssignments(id);
-    if (!quoteRequest) {
-      throw new NotFoundException(`Quote request with ID ${id} not found`);
-    }
-    return quoteRequest;
   }
 }

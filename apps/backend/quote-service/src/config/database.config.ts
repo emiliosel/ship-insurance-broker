@@ -1,14 +1,20 @@
-import { ConfigService } from '@nestjs/config';
-import { TypeOrmModuleOptions } from '@nestjs/typeorm';
-import { QuoteRequest, ResponderAssignment } from '../quote/entities/quote-request.entity';
+import { registerAs } from '@nestjs/config';
 
-export const getDatabaseConfig = (configService: ConfigService): TypeOrmModuleOptions => ({
-  type: 'postgres',
-  host: configService.get('DB_HOST'),
-  port: configService.get('DB_PORT'),
-  username: configService.get('DB_USER'),
-  password: configService.get('DB_PASSWORD'),
-  database: configService.get('DB_NAME'),
-  entities: [QuoteRequest, ResponderAssignment],
-  synchronize: configService.get('NODE_ENV') === 'development',
+export default registerAs('database', () => {
+  // Runtime validation for required environment variables
+  const host = process.env.DB_HOST ?? 'localhost';
+  const port = parseInt(process.env.DB_PORT ?? '5432', 10);
+  const username = process.env.DB_USERNAME ?? 'postgres';
+  const password = process.env.DB_PASSWORD ?? 'postgres';
+  const name = process.env.DB_NAME ?? 'quote_service_db';
+  const synchronize = process.env.DB_SYNC === 'true';
+
+  return {
+    host,
+    port,
+    username,
+    password,
+    name,
+    synchronize,
+  };
 });

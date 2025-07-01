@@ -15,19 +15,13 @@ services:
     build:
       context: .
       dockerfile: ./apps/backend/quote-service/Dockerfile
-    environment:
-      - NODE_ENV=development
-      - PORT=3000
-      - DB_HOST=quote-db
-      - DB_PORT=5432
-      - DB_NAME=quote
-      - DB_USER=postgres
-      - DB_PASSWORD=postgres
-      - RABBITMQ_URL=amqp://rabbitmq:5672
-      - RABBITMQ_QUEUE=quote_service_queue
+    env_file:
+      - ./apps/backend/quote-service/.env
     depends_on:
-      - quote-db
-      - rabbitmq
+      rabbitmq:
+        condition: service_healthy
+      quote-db:
+        condition: service_started
     ports:
       - "3000:3000"
 
@@ -140,6 +134,11 @@ services:
     environment:
       - RABBITMQ_DEFAULT_USER=guest
       - RABBITMQ_DEFAULT_PASS=guest
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   quote-db-data:
