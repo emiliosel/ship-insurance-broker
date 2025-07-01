@@ -1,0 +1,130 @@
+Business Context
+Our SaaS platform lets separate companies negotiate risk quotations for commercial
+voyages:
+1. A **Requester** completes a 3‑step wizard to create a Quote Request and chooses
+one or more **Responders** (insurers / brokers) from a company directory.
+2. Each **Responder** receives the request and replies with a premium (USD) plus
+optional comments.
+3. The **Requester** reviews all premiums and accepts exactly one (or rejects all).
+4. Non‑winning responders are notified; the negotiation is then closed.
+
+Key constraints we care about:
+Theme Why it matters
+Multi‑tenant isolation Companies involved in the same request
+must still be walled‑off from each other’s
+unrelated data.
+
+Role‑based workflow Requester ↔ multiple Responders, single
+acceptance, cancellation edge‑case.
+Audit &amp; notifications Every state change (submit, responder
+reply, acceptance, cancellation) is logged
+and triggers a tenant‑scoped notification.
+Wizard‑friendly API Frontend saves drafts locally; backend
+must accept the final “Submit” that
+includes voyage data and responder list.
+
+Deliverables (single public Git repository)
+Deliverable Purpose
+Assumptions &amp; Open Questions (≤ 20
+bullets)
+
+Show how you clarify fuzzy product points
+before coding.
+
+High‑Level Data &amp; Tenant Model
+(diagram)
+
+ERD, UML class diagram, or similar.
+Focus on relationships and
+tenant‑isolation approach, not every
+column.
+
+API Design Sketch Define your own minimal set of
+operations that supports the flow.
+Representative request/response
+snippets are enough; exhaustive
+schemas are not required.
+
+Architecture Diagram Services, data store(s), queues, CI/CD,
+observability. Highlight where
+tenant‑isolation and notifications live.
+Code Spike (≤ 400 LoC) Runnable PoC in any stack you like,
+
+containing:
+• Tenant/RBAC middleware
+• One “Submit Quote Request” endpoint
+• One responder “Send Quote Response”
+endpoint
+• One requester “Accept Response”
+endpoint
+• README with setup &amp; sample calls.
+Technical Note (≤ 300 words) Explain key trade‑offs: tenant model,
+RBAC, notification path, limits of the
+spike.
+
+You do not need complete database DDL, exhaustive payload schemas, or a
+production‑ready notification system. Emphasize modelling choices and architectural
+thinking.
+
+Functional Slice You Must Enable
+Actor Action Essential Behaviour
+Submit Quote Request Requester creates the request, links it to
+selected responder companies, and
+notifies each responder.
+
+List Assigned Requests Responder lists only requests where their
+
+assignment is pending.
+
+Send Quote Response Responder stores premium &amp; comment,
+marks assignment responded, notifies
+requester.
+
+Accept One Response Requester marks one response accepted,
+others auto‑rejected; closes request;
+notifies all responders.
+Cancel Request (optional) Requester may cancel before
+acceptance; closes all as cancelled;
+notifies responders.
+
+List Notifications Any role fetches tenant‑scoped
+notifications, newest first.
+
+Authentication/authorisation: choose any lightweight scheme (e.g., JWT, custom
+headers). Show how tenant and role travel with every call.
+
+Evaluation Rubric
+Axis Judging Criteria Weight
+Architecture clarity Sound multi‑tenant
+strategy; clear diagrams;
+logical component split
+
+30 %
+
+Data &amp; API design Entities &amp; operations map
+
+cleanly to the
+multi‑responder workflow;
+extensible &amp; secure
+
+30 %
+
+Code quality Idiomatic style; clean
+structure; basic tests
+welcomed but optional
+
+20 %
+
+Security mindset Tenant checks,
+least‑privilege RBAC,
+basic validation
+
+10 %
+
+Communication Concise assumptions;
+readable README; clear
+technical note
+
+10 %
+
+Extra credit: Docker/Compose for quick spin‑up, lightweight CI config, unit tests.

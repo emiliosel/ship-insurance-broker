@@ -1,0 +1,148 @@
+services:
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - quote-service
+      # - notification-service
+      # - audit-service
+      # - company-service
+
+  quote-service:
+    build:
+      context: .
+      dockerfile: ./apps/backend/quote-service/Dockerfile
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - DB_HOST=quote-db
+      - DB_PORT=5432
+      - DB_NAME=quote
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - RABBITMQ_QUEUE=quote_service_queue
+    depends_on:
+      - quote-db
+      - rabbitmq
+    ports:
+      - "3000:3000"
+
+  # notification-service:
+  #   build:
+  #     context: .
+  #     dockerfile: ./apps/backend/notification-service/Dockerfile
+  #   environment:
+  #     - NODE_ENV=development
+  #     - PORT=3001
+  #     - DB_HOST=notification-db
+  #     - DB_PORT=5432
+  #     - DB_NAME=notification
+  #     - DB_USER=postgres
+  #     - DB_PASSWORD=postgres
+  #     - RABBITMQ_URL=amqp://rabbitmq:5672
+  #   depends_on:
+  #     - notification-db
+  #     - rabbitmq
+  #   ports:
+  #     - "3001:3001"
+
+  # audit-service:
+  #   build:
+  #     context: .
+  #     dockerfile: ./apps/backend/audit-service/Dockerfile
+  #   environment:
+  #     - NODE_ENV=development
+  #     - PORT=3002
+  #     - DB_HOST=audit-db
+  #     - DB_PORT=5432
+  #     - DB_NAME=audit
+  #     - DB_USER=postgres
+  #     - DB_PASSWORD=postgres
+  #     - RABBITMQ_URL=amqp://rabbitmq:5672
+  #   depends_on:
+  #     - audit-db
+  #     - rabbitmq
+  #   ports:
+  #     - "3002:3002"
+
+  # company-service:
+  #   build:
+  #     context: .
+  #     dockerfile: ./apps/backend/company-service/Dockerfile
+  #   environment:
+  #     - NODE_ENV=development
+  #     - PORT=3003
+  #     - DB_HOST=company-db
+  #     - DB_PORT=5432
+  #     - DB_NAME=company
+  #     - DB_USER=postgres
+  #     - DB_PASSWORD=postgres
+  #     - RABBITMQ_URL=amqp://rabbitmq:5672
+  #   depends_on:
+  #     - company-db
+  #     - rabbitmq
+  #   ports:
+  #     - "3003:3003"
+
+  quote-db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=quote
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - quote-db-data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+
+  # notification-db:
+  #   image: postgres:15-alpine
+  #   environment:
+  #     - POSTGRES_DB=notification
+  #     - POSTGRES_USER=postgres
+  #     - POSTGRES_PASSWORD=postgres
+  #   volumes:
+  #     - notification-db-data:/var/lib/postgresql/data
+  #   ports:
+  #     - "5434:5432"
+
+  audit-db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=audit
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - audit-db-data:/var/lib/postgresql/data
+    ports:
+      - "5435:5432"
+
+  # company-db:
+  #   image: postgres:15-alpine
+  #   environment:
+  #     - POSTGRES_DB=company
+  #     - POSTGRES_USER=postgres
+  #     - POSTGRES_PASSWORD=postgres
+  #   volumes:
+  #     - company-db-data:/var/lib/postgresql/data
+  #   ports:
+  #     - "5435:5432"
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+
+volumes:
+  quote-db-data:
+  notification-db-data:
+  audit-db-data:
+  company-db-data:
