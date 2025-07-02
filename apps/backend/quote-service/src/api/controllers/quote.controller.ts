@@ -1,63 +1,135 @@
-import { Controller, Get, Post, Body, Param, Patch } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Put, Delete, HttpStatus, HttpException } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { QuoteService } from '../../application/services/quote.service';
 import { CreateQuoteRequestDto } from '../dto/create-quote-request.dto';
 import { QuoteRequest } from '../../domain/entities/quote-request.entity';
 
+@ApiTags('quote-requests')
 @Controller('quote-requests')
 export class QuoteController {
   constructor(private readonly quoteService: QuoteService) {}
 
   @Post()
-  async createQuoteRequest(
-    @Body() createQuoteRequestDto: CreateQuoteRequestDto,
-    @Body('requesterId') requesterId: string,
-  ): Promise<QuoteRequest> {
-    return this.quoteService.createQuoteRequest(requesterId, createQuoteRequestDto.toVoyageData());
-  }
-
-  @Post(':id/assign/:responderId')
-  async assignResponder(
-    @Param('id') quoteRequestId: string,
-    @Param('responderId') responderId: string,
-  ): Promise<QuoteRequest> {
-    return this.quoteService.assignResponder(quoteRequestId, responderId);
-  }
-
-  @Post(':id/respond')
-  async submitResponse(
-    @Param('id') quoteRequestId: string,
-    @Body('responderId') responderId: string,
-    @Body('price') price: number,
-    @Body('comments') comments: string,
-  ): Promise<QuoteRequest> {
-    return this.quoteService.submitResponse(quoteRequestId, responderId, price, comments);
-  }
-
-  @Patch(':id/complete')
-  async completeQuoteRequest(
-    @Param('id') quoteRequestId: string,
-  ): Promise<QuoteRequest> {
-    return this.quoteService.completeQuoteRequest(quoteRequestId);
-  }
-
-  @Patch(':id/cancel')
-  async cancelQuoteRequest(
-    @Param('id') quoteRequestId: string,
-  ): Promise<QuoteRequest> {
-    return this.quoteService.cancelQuoteRequest(quoteRequestId);
+  @ApiOperation({ summary: 'Create a new quote request' })
+  @ApiResponse({
+    status: 201,
+    description: 'The quote request has been successfully created.',
+    type: QuoteRequest
+  })
+  async createQuoteRequest(@Body() dto: CreateQuoteRequestDto): Promise<QuoteRequest> {
+    try {
+      return await this.quoteService.createQuoteRequest(
+        dto.requesterId,
+        dto.voyageData.toVoyageData(),
+        dto.responderIds
+      );
+    } catch (error) {
+      throw new HttpException(
+        error.message,
+        error.status || HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
   }
 
   @Get('requester/:requesterId')
-  async findByRequesterId(
-    @Param('requesterId') requesterId: string,
-  ): Promise<QuoteRequest[]> {
-    return this.quoteService.findByRequesterId(requesterId);
+  @ApiOperation({ summary: 'Get all quote requests for a requester' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of quote requests for the requester',
+    type: [QuoteRequest]
+  })
+  async getQuotesByRequesterId(@Param('requesterId') requesterId: string): Promise<QuoteRequest[]> {
+    try {
+      return await this.quoteService.findByRequesterId(requesterId);
+    } catch (error) {
+      throw new HttpException(
+        error.message,
+        error.status || HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
   }
 
-  @Get('responder/:responderId/active')
-  async findActiveByResponderId(
+  @Get('responder/:responderId/pending')
+  @ApiOperation({ summary: 'Get pending quote requests for a responder' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of pending quote requests for the responder',
+    type: [QuoteRequest]
+  })
+  async getPendingQuotesByResponderId(@Param('responderId') responderId: string): Promise<QuoteRequest[]> {
+    try {
+      return await this.quoteService.findPendingByResponderId(responderId);
+    } catch (error) {
+      throw new HttpException(
+        error.message,
+        error.status || HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  @Put(':quoteRequestId/responses/:responderId')
+  @ApiOperation({ summary: 'Submit a response to a quote request' })
+  @ApiResponse({
+    status: 200,
+    description: 'The response has been successfully submitted',
+    type: QuoteRequest
+  })
+  async setResponse(
+    @Param('quoteRequestId') quoteRequestId: string,
     @Param('responderId') responderId: string,
-  ): Promise<QuoteRequest[]> {
-    return this.quoteService.findActiveQuoteRequestsByResponderId(responderId);
+    @Body() response: { price: number; comments: string }
+  ): Promise<QuoteRequest> {
+    try {
+      return await this.quoteService.setResponse(
+        quoteRequestId,
+        responderId,
+        response.price,
+        response.comments
+      );
+    } catch (error) {
+      throw new HttpException(
+        error.message,
+        error.status || HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  @Put(':quoteRequestId/accept/:responderId')
+  @ApiOperation({ summary: 'Accept a response for a quote request' })
+  @ApiResponse({
+    status: 200,
+    description: 'The response has been successfully accepted',
+    type: QuoteRequest
+  })
+  async acceptResponse(
+    @Param('quoteRequestId') quoteRequestId: string,
+    @Param('responderId') responderId: string
+  ): Promise<QuoteRequest> {
+    try {
+      return await this.quoteService.acceptResponse(quoteRequestId, responderId);
+    } catch (error) {
+      throw new HttpException(
+        error.message,
+        error.status || HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  @Delete(':quoteRequestId')
+  @ApiOperation({ summary: 'Cancel a quote request' })
+  @ApiResponse({
+    status: 200,
+    description: 'The quote request has been successfully cancelled',
+    type: QuoteRequest
+  })
+  async cancelQuoteRequest(@Param('quoteRequestId') quoteRequestId: string): Promise<QuoteRequest> {
+    try {
+      return await this.quoteService.cancelQuoteRequest(quoteRequestId);
+    } catch (error) {
+      throw new HttpException(
+        error.message,
+        error.status || HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
   }
 }

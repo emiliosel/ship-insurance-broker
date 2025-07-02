@@ -1,29 +1,29 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { QuoteRequest } from './quote-request.entity';
-import { IResponderAssignment } from '../interfaces';
+import { ResponseStatus } from '../types';
 
-@Entity('responder_assignments')
-export class ResponderAssignment implements IResponderAssignment {
+@Entity()
+export class ResponderAssignment {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @Column()
   responderId: string;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
-  price: number;
+  @Column({
+    type: 'enum',
+    enum: ResponseStatus,
+    default: ResponseStatus.PENDING
+  })
+  status: ResponseStatus;
 
-  @Column({ type: 'text', nullable: true })
-  comments: string;
+  @Column('decimal', { precision: 10, scale: 2, nullable: true })
+  price?: number;
 
-  @Column({ default: false })
-  hasResponded: boolean;
-
-  @Column({ type: 'timestamp', nullable: true })
-  responseDate: Date;
+  @Column('text', { nullable: true })
+  comments?: string;
 
   @ManyToOne(() => QuoteRequest, quoteRequest => quoteRequest.responderAssignments)
-  @JoinColumn({ name: 'quote_request_id' })
   quoteRequest: QuoteRequest;
 
   @CreateDateColumn()
@@ -32,14 +32,38 @@ export class ResponderAssignment implements IResponderAssignment {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  setResponse(price: number, comments: string): void {
-    if (this.hasResponded) {
-      throw new Error('Response has already been submitted');
+  submitResponse(price: number, comments: string): void {
+    if (this.status !== ResponseStatus.PENDING) {
+      throw new Error('Response can only be submitted when in PENDING status');
     }
 
     this.price = price;
     this.comments = comments;
-    this.hasResponded = true;
-    this.responseDate = new Date();
+    this.status = ResponseStatus.SUBMITTED;
+  }
+
+  hasSubmittedResponse(): boolean {
+    return this.status === ResponseStatus.SUBMITTED;
+  }
+
+  accept(): void {
+    if (this.status !== ResponseStatus.SUBMITTED) {
+      throw new Error('Only submitted responses can be accepted');
+    }
+    this.status = ResponseStatus.ACCEPTED;
+  }
+
+  reject(): void {
+    if (this.status !== ResponseStatus.SUBMITTED) {
+      throw new Error('Only submitted responses can be rejected');
+    }
+    this.status = ResponseStatus.REJECTED;
+  }
+
+  cancel(): void {
+    if (this.status === ResponseStatus.ACCEPTED || this.status === ResponseStatus.REJECTED) {
+      throw new Error('Cannot cancel a finalized response');
+    }
+    this.status = ResponseStatus.CANCELLED;
   }
 }

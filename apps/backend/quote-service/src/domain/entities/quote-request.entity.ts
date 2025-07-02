@@ -1,10 +1,14 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
-import { VoyageData, QuoteRequestStatus } from '../types';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
 import { ResponderAssignment } from './responder-assignment.entity';
-import { IQuoteRequest } from '../interfaces';
+import { VoyageData, QuoteRequestStatus } from '../types';
+import {
+  InvalidQuoteRequestStateException,
+  QuoteRequestAlreadyFinalizedException,
+  ResponderNotFoundException,
+} from '../exceptions';
 
-@Entity('quote_requests')
-export class QuoteRequest implements IQuoteRequest {
+@Entity()
+export class QuoteRequest {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
@@ -22,7 +26,8 @@ export class QuoteRequest implements IQuoteRequest {
   status: QuoteRequestStatus;
 
   @OneToMany(() => ResponderAssignment, assignment => assignment.quoteRequest, {
-    cascade: true
+    cascade: true,
+    eager: true
   })
   responderAssignments: ResponderAssignment[];
 
@@ -32,62 +37,62 @@ export class QuoteRequest implements IQuoteRequest {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  assignResponder(responderId: string): void {
-    if (this.status === QuoteRequestStatus.COMPLETED || 
-        this.status === QuoteRequestStatus.CANCELLED) {
-      throw new Error('Cannot assign responders to a finalized quote request');
-    }
-
-    const newAssignment = new ResponderAssignment();
-    newAssignment.responderId = responderId;
-    newAssignment.quoteRequest = this;
-    
-    if (!this.responderAssignments) {
-      this.responderAssignments = [];
-    }
-    
-    if (this.responderAssignments.find(a => a.responderId === responderId)) {
-      throw new Error('Responder already assigned to this quote request');
-    }
-
-    this.responderAssignments.push(newAssignment);
-    this.updateStatus(QuoteRequestStatus.IN_PROGRESS);
+  findResponder(responderId: string): ResponderAssignment | undefined {
+    return this.responderAssignments.find(
+      assignment => assignment.responderId === responderId
+    );
   }
 
-  submitResponse(responderId: string, price: number, comments: string): void {
-    if (this.status === QuoteRequestStatus.COMPLETED || 
-        this.status === QuoteRequestStatus.CANCELLED) {
-      throw new Error('Cannot submit response to a finalized quote request');
-    }
-
-    const assignment = this.responderAssignments?.find(a => a.responderId === responderId);
-    
-    if (!assignment) {
-      throw new Error('Responder not assigned to this quote request');
-    }
-
-    assignment.setResponse(price, comments);
+  addResponders(responderIds: string[]): void {
+    this.responderAssignments = responderIds.map(responderId => {
+      const assignment = new ResponderAssignment();
+      assignment.responderId = responderId;
+      assignment.quoteRequest = this;
+      return assignment;
+    });
   }
 
-  updateStatus(newStatus: QuoteRequestStatus): void {
-    if (this.status === QuoteRequestStatus.COMPLETED || 
-        this.status === QuoteRequestStatus.CANCELLED) {
-      throw new Error('Cannot update status of a finalized quote request');
+  acceptResponse(responderId: string): void {
+    if (this.isFinalized()) {
+      throw new QuoteRequestAlreadyFinalizedException(this.id);
     }
-    this.status = newStatus;
+
+    const responder = this.findResponder(responderId);
+    if (!responder) {
+      throw new ResponderNotFoundException(this.id, responderId);
+    }
+
+    if (!responder.hasSubmittedResponse()) {
+      throw new InvalidQuoteRequestStateException(
+        this.id,
+        this.status,
+        QuoteRequestStatus.RESPONDED
+      );
+    }
+
+    this.status = QuoteRequestStatus.ACCEPTED;
+    responder.accept();
+
+    // Reject all other responses
+    this.responderAssignments
+      .filter(assignment => assignment.responderId !== responderId)
+      .forEach(assignment => assignment.reject());
   }
 
-  completeQuote(): void {
-    if (this.status === QuoteRequestStatus.CANCELLED) {
-      throw new Error('Cannot complete a cancelled quote request');
+  cancel(): void {
+    if (this.isFinalized()) {
+      throw new QuoteRequestAlreadyFinalizedException(this.id);
     }
-    this.status = QuoteRequestStatus.COMPLETED;
-  }
 
-  cancelQuote(): void {
-    if (this.status === QuoteRequestStatus.COMPLETED) {
-      throw new Error('Cannot cancel a completed quote request');
-    }
     this.status = QuoteRequestStatus.CANCELLED;
+    this.responderAssignments.forEach(assignment => assignment.cancel());
+  }
+
+  isFinalized(): boolean {
+    return [
+      QuoteRequestStatus.ACCEPTED,
+      QuoteRequestStatus.CANCELLED,
+      QuoteRequestStatus.COMPLETED
+    ].includes(this.status);
   }
 }

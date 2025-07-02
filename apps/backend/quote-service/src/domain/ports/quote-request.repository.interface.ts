@@ -2,9 +2,19 @@ import { QuoteRequest } from '../entities/quote-request.entity';
 import { VoyageData } from '../types';
 
 export interface IQuoteRequestRepository {
-  createQuoteRequest(requesterId: string, voyageData: VoyageData): Promise<QuoteRequest>;
+  create(
+    requesterId: string,
+    voyageData: VoyageData,
+    responderIds: string[]
+  ): Promise<QuoteRequest>;
+  
+  findById(id: string): Promise<QuoteRequest | null>;
+  
   findByRequesterId(requesterId: string): Promise<QuoteRequest[]>;
-  findWithResponderAssignments(quoteRequestId: string): Promise<QuoteRequest | null>;
-  findActiveQuoteRequestsByResponderId(responderId: string): Promise<QuoteRequest[]>;
+  
+  findPendingByResponderId(responderId: string): Promise<QuoteRequest[]>;
+  
   save(quoteRequest: QuoteRequest): Promise<QuoteRequest>;
+  
+  delete(id: string): Promise<void>;
 }

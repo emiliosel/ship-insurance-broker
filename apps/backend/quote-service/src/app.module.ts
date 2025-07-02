@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
 import { QuoteRequest } from './domain/entities/quote-request.entity';
 import { ResponderAssignment } from './domain/entities/responder-assignment.entity';
 import { QuoteService } from './application/services/quote.service';
@@ -12,6 +13,7 @@ import { validate } from './config/env.validation';
 import databaseConfig from './config/database.config';
 import rabbitmqConfig from './config/rabbitmq.config';
 import { RabbitMQModule as GolevelupRabbitMQModule } from '@golevelup/nestjs-rabbitmq';
+import { HealthController } from './api/controllers/health.controller';
 
 @Module({
   imports: [
@@ -62,7 +64,7 @@ import { RabbitMQModule as GolevelupRabbitMQModule } from '@golevelup/nestjs-rab
     TypeOrmModule.forFeature([QuoteRequest, ResponderAssignment]),
     // RabbitMQService,
   ],
-  controllers: [QuoteController],
+  controllers: [QuoteController, HealthController],
   providers: [
     QuoteService,
     RabbitMQService,
