@@ -116,14 +116,14 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Build shared package
+        run: cd packages/shared && pnpm build
+
       - name: Lint
         run: cd apps/backend/notification-service && pnpm lint
 
       - name: Test
         run: cd apps/backend/notification-service && pnpm test
-
-      - name: Build shared package
-        run: cd packages/shared && pnpm build
 
       - name: Build service
         run: cd apps/backend/notification-service && pnpm build
@@ -174,14 +174,14 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Build shared package
+        run: cd packages/shared && pnpm build
+
       - name: Lint
         run: cd apps/backend/quote-service && pnpm lint
 
       - name: Test
         run: cd apps/backend/quote-service && pnpm test
-
-      - name: Build shared package
-        run: cd packages/shared && pnpm build
 
       - name: Build service
         run: cd apps/backend/quote-service && pnpm build
