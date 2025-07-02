@@ -63,7 +63,6 @@ export class JwtAuthGuard implements CanActivate {
       throw new UnauthorizedException("Invalid token");
     }
 
-    // Attach the user to the request object
     request.user = this.jwtService.extractUserFromPayload(payload);
 
     return true;
