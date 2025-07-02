@@ -125,8 +125,10 @@ jobs:
       - name: Test
         run: cd apps/backend/notification-service && pnpm test
 
-      - name: Build service
-        run: cd apps/backend/notification-service && pnpm build
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver: docker-container
 
       - name: Build Docker image
         uses: docker/build-push-action@v5
@@ -183,8 +185,10 @@ jobs:
       - name: Test
         run: cd apps/backend/quote-service && pnpm test
 
-      - name: Build service
-        run: cd apps/backend/quote-service && pnpm build
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver: docker-container
 
       - name: Build Docker image
         uses: docker/build-push-action@v5
