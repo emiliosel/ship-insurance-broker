@@ -3,13 +3,6 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class SetQuoteResponseDto {
   @ApiProperty({
-    description: 'ID of the responder providing the quote',
-    format: 'uuid'
-  })
-  @IsUUID()
-  responderId: string;
-
-  @ApiProperty({
     description: 'Proposed price for the shipping service',
     minimum: 0,
     example: 50000

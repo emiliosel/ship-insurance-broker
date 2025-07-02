@@ -15,18 +15,14 @@ COPY pnpm-lock.yaml ./
 COPY packages/shared/package.json ./packages/shared/package.json
 COPY apps/backend/quote-service/package.json ./apps/backend/quote-service/package.json
 
-# Install dependencies
+# Install dependencies including dev dependencies
 RUN pnpm install
 
 # Copy source code
 COPY packages/shared/ ./packages/shared/
 COPY apps/backend/quote-service/ ./apps/backend/quote-service/
 
-# Build shared package first
-RUN pnpm --filter @quote-system/shared build
-
-# Build quote service
-RUN pnpm --filter @quote-system/quote-service build
+RUN pnpm build
 
 # Production Stage
 FROM node:22-alpine

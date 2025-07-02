@@ -1,4 +1,4 @@
-import { Injectable, CanActivate, ExecutionContext, ForbiddenException, SetMetadata } from '@nestjs/common';
+import { Injectable, CanActivate, ExecutionContext, ForbiddenException, SetMetadata, Logger } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { JwtAuthGuard } from './jwt-auth.guard';
 
@@ -50,6 +50,7 @@ export class RolesGuard implements CanActivate {
     const hasRole = roles.some((role: string) => user.roles.includes(role));
 
     if (!hasRole) {
+      Logger.log(JSON.stringify({ user }));
       throw new ForbiddenException(`User does not have the required roles: ${roles.join(', ')}`);
     }
 

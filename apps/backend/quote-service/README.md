@@ -81,6 +81,39 @@ The service uses JWT authentication with RS256 algorithm for secure access. All 
 
 For detailed information on how to test the authentication functionality, see the [JWT Authentication Testing Guide](../../../docs/jwt-auth-testing.md).
 
+## Tenant Isolation
+
+The service implements multi-tenant isolation to ensure that companies can only access their own data:
+
+1. **Company ID as Tenant ID**: The system uses company IDs as tenant identifiers, stored in the JWT token.
+2. **Service-Layer Enforcement**: Tenant isolation is enforced at the service layer by passing the company ID from the JWT token and checking it against the requesterId or responderId in the database.
+3. **Role-Based Access Control**: Combined with RBAC to ensure users can only perform actions appropriate to their role (requester/responder).
+4. **Data Filtering**: All queries filter data by company ID to ensure users only see their own data.
+
+### Testing Tenant Isolation
+
+To test the tenant isolation implementation, use the provided test scripts:
+
+```bash
+# Make the test script executable
+chmod +x docs/run-tenant-isolation-tests.sh
+
+# Run the tenant isolation tests
+./docs/run-tenant-isolation-tests.sh
+```
+
+The test script performs the following checks:
+- Company A (requester) can create and view its own quote requests
+- Companies B and C (responders) can only view quote requests assigned to them
+- Companies B and C can submit responses to quote requests they're assigned to
+- Company A can accept responses
+- Company B cannot accept responses (tenant isolation)
+- Company A can cancel quote requests
+- Company B cannot cancel quote requests (tenant isolation)
+- Company C cannot submit responses to quote requests it's not assigned to (tenant isolation)
+
+For individual curl commands, see [Tenant Isolation Testing](../../../docs/tenant-isolation-test.md).
+
 ## API Endpoints
 
 ### Quote Requests

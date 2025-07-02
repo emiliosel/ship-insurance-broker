@@ -12,7 +12,7 @@ import {
   QuoteResponseAlreadySubmittedException,
 } from '../../domain/exceptions';
 
-@Catch(Error)
+// @Catch(Error)
 export class DomainExceptionsFilter implements ExceptionFilter {
   catch(exception: Error, host: ArgumentsHost) {
     const ctx = host.switchToHttp();

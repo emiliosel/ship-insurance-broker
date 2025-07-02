@@ -5,8 +5,11 @@ import {
   HttpException,
   HttpStatus,
   Logger,
+  UnauthorizedException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
+import { isDomainException } from './domain-exceptions.filter';
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
@@ -21,7 +24,28 @@ export class AllExceptionsFilter implements ExceptionFilter {
     let message = 'Internal server error';
     let error = 'Internal Server Error';
 
-    if (exception instanceof HttpException) {
+    // Handle specific NestJS exceptions
+    if (exception instanceof ForbiddenException) {
+      status = HttpStatus.FORBIDDEN;
+      const responseBody = exception.getResponse();
+      if (typeof responseBody === 'object') {
+        message = (responseBody as any).message || 'Forbidden';
+        error = (responseBody as any).error || 'Forbidden';
+      } else {
+        message = responseBody;
+      }
+      this.logger.warn(`Forbidden access: ${message}`);
+    } else if (exception instanceof UnauthorizedException) {
+      status = HttpStatus.UNAUTHORIZED;
+      const responseBody = exception.getResponse();
+      if (typeof responseBody === 'object') {
+        message = (responseBody as any).message || 'Unauthorized';
+        error = (responseBody as any).error || 'Unauthorized';
+      } else {
+        message = responseBody;
+      }
+      this.logger.warn(`Unauthorized access: ${message}`);
+    } else if (exception instanceof HttpException) {
       status = exception.getStatus();
       const responseBody = exception.getResponse();
       if (typeof responseBody === 'object') {
@@ -30,6 +54,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
       } else {
         message = responseBody;
       }
+    } else if (exception instanceof Error && isDomainException(exception)) {
+      // Let the domain exceptions filter handle domain-specific errors
+      throw exception;
     } else if (exception instanceof Error) {
       message = exception.message;
     }

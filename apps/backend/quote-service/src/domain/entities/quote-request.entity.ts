@@ -13,6 +13,9 @@ export class QuoteRequest {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  /**
+   * The company ID (tenant ID) of the requester
+   */
   @Column()
   requesterId: string;
 

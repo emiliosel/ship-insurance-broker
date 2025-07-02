@@ -69,6 +69,7 @@ import { HealthController } from './api/controllers/health.controller';
         database: configService.getOrThrow('database.name'),
         entities: [QuoteRequest, ResponderAssignment],
         synchronize: configService.getOrThrow('database.synchronize'),
+        logging: 'all'
       }),
     }),
     TypeOrmModule.forFeature([QuoteRequest, ResponderAssignment]),

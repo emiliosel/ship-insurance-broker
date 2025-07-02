@@ -1,8 +1,18 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { QuoteRequest } from '../../domain/entities/quote-request.entity';
 import { VoyageData } from '../../domain/types';
 import { QuoteRequestRepository } from '../../infrastructure/persistence/quote-request.repository';
 import { RabbitMQService } from '../../infrastructure/messaging/rabbitmq.service';
+
+/**
+ * Service for managing quote requests with tenant isolation
+ * 
+ * This service implements tenant isolation by:
+ * 1. Using company IDs (tenant IDs) for requesterId and responderId fields
+ * 2. Enforcing access control checks to ensure companies can only access their own data
+ * 3. Validating that only the requester company can accept/cancel quote requests
+ * 4. Validating that only assigned responder companies can submit responses
+ */
 import {
   QuoteRequestNotFoundException,
   ResponderNotFoundException,
@@ -55,24 +65,24 @@ export class QuoteService {
 
   async setResponse(
     quoteRequestId: string,
-    responderId: string,
+    responderCompanyId: string,
     price: number,
     comments: string
   ): Promise<QuoteRequest> {
-    this.logger.debug(`Setting response for quote request: ${quoteRequestId}, responder: ${responderId}`);
+    this.logger.debug(`Setting response for quote request: ${quoteRequestId}, responder company: ${responderCompanyId}`);
 
     const quoteRequest = await this.quoteRequestRepository.findById(quoteRequestId);
     if (!quoteRequest) {
       throw new QuoteRequestNotFoundException(quoteRequestId);
     }
 
-    const responder = quoteRequest.findResponder(responderId);
+    const responder = quoteRequest.findResponder(responderCompanyId);
     if (!responder) {
-      throw new ResponderNotFoundException(quoteRequestId, responderId);
+      throw new ResponderNotFoundException(quoteRequestId, responderCompanyId);
     }
 
     if (responder.hasSubmittedResponse()) {
-      throw new QuoteResponseAlreadySubmittedException(responderId);
+      throw new QuoteResponseAlreadySubmittedException(responderCompanyId);
     }
 
     responder.submitResponse(price, comments);
@@ -80,7 +90,7 @@ export class QuoteService {
 
     await this.messagingService.emit('quote_request.response_submitted', {
       quoteRequestId,
-      responderId,
+      responderId: responderCompanyId,
       price,
       comments
     });
@@ -88,12 +98,17 @@ export class QuoteService {
     return updatedQuoteRequest;
   }
 
-  async acceptResponse(quoteRequestId: string, responderId: string): Promise<QuoteRequest> {
+  async acceptResponse(quoteRequestId: string, responderId: string, requesterCompanyId: string): Promise<QuoteRequest> {
     this.logger.debug(`Accepting response for quote request: ${quoteRequestId}, responder: ${responderId}`);
 
     const quoteRequest = await this.quoteRequestRepository.findById(quoteRequestId);
     if (!quoteRequest) {
       throw new QuoteRequestNotFoundException(quoteRequestId);
+    }
+
+    // Ensure tenant isolation - only the requester company that created the quote request can accept responses
+    if (quoteRequest.requesterId !== requesterCompanyId) {
+      throw new UnauthorizedException(`Company ${requesterCompanyId} is not authorized to accept responses for this quote request`);
     }
 
     const responder = quoteRequest.findResponder(responderId);
@@ -115,18 +130,23 @@ export class QuoteService {
     await this.messagingService.emit('quote_request.response_accepted', {
       quoteRequestId,
       responderId,
-      rejectedResponderIds: quoteRequest.responderAssignments.filter(r => r.id === responderId).map(r => r.id)
+      rejectedResponderIds: quoteRequest.responderAssignments.filter(r => r.responderId !== responderId).map(r => r.responderId)
     });
 
     return updatedQuoteRequest;
   }
 
-  async cancelQuoteRequest(quoteRequestId: string): Promise<QuoteRequest> {
+  async cancelQuoteRequest(quoteRequestId: string, requesterCompanyId: string): Promise<QuoteRequest> {
     this.logger.debug(`Cancelling quote request: ${quoteRequestId}`);
 
     const quoteRequest = await this.quoteRequestRepository.findById(quoteRequestId);
     if (!quoteRequest) {
       throw new QuoteRequestNotFoundException(quoteRequestId);
+    }
+
+    // Ensure tenant isolation - only the requester company that created the quote request can cancel it
+    if (quoteRequest.requesterId !== requesterCompanyId) {
+      throw new UnauthorizedException(`Company ${requesterCompanyId} is not authorized to cancel this quote request`);
     }
 
     if (quoteRequest.isFinalized()) {
@@ -138,7 +158,7 @@ export class QuoteService {
 
     await this.messagingService.emit('quote_request.cancelled', {
       quoteRequestId,
-      responderIds: quoteRequest.responderAssignments.map(r => r.id)
+      responderIds: quoteRequest.responderAssignments.map(r => r.responderId)
     });
 
     return updatedQuoteRequest;

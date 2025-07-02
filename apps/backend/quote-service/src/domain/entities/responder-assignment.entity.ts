@@ -7,6 +7,9 @@ export class ResponderAssignment {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  /**
+   * The company ID (tenant ID) of the responder
+   */
   @Column()
   responderId: string;
 

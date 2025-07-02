@@ -2,8 +2,9 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { JwtAuthGuard } from '@quote-system/shared';
+// import { JwtAuthGuard } from '@quote-system/shared';
 import { AppModule } from './app.module';
+// import { AllExceptionsFilter } from './api/filters/all-exceptions.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -15,12 +16,16 @@ async function bootstrap() {
     forbidNonWhitelisted: true,
   }));
 
+  // Global exception filter
+  // app.useGlobalFilters(new AllExceptionsFilter());
+
   // CORS
   app.enableCors();
 
   // Global guards
   // Uncomment this line to enable global authentication
   // app.useGlobalGuards(new JwtAuthGuard());
+  console.log('test');
 
   // Swagger documentation
   const config = new DocumentBuilder()
@@ -39,6 +44,7 @@ async function bootstrap() {
       },
       'JWT-auth',
     )
+    .addServer('http://localhost:8080/api/v1/quotes/', 'Quote Service Local API')
     .build();
     
   const document = SwaggerModule.createDocument(app, config);

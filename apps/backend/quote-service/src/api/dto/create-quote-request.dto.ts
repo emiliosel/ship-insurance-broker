@@ -78,13 +78,6 @@ export class VoyageDataDto {
 
 export class CreateQuoteRequestDto {
   @ApiProperty({
-    description: 'ID of the requester',
-    format: 'uuid'
-  })
-  @IsUUID()
-  requesterId: string;
-
-  @ApiProperty({
     description: 'Array of responder IDs',
     type: [String],
     format: 'uuid'
