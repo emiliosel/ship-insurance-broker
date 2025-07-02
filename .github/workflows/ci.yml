@@ -38,7 +38,7 @@ jobs:
   shared:
     needs: changes
     # execute only if the other services have no change
-    if: ${{ needs.changes.outputs.shared == 'true' && needs.changes.outputs.notification === 'false' && needs.changes.outputs.quote === 'false' }}
+    if: needs.changes.outputs.shared == 'true' && needs.changes.outputs.notification == 'false' && needs.changes.outputs.quote == 'false'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code

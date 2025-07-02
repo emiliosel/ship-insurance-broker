@@ -12,7 +12,6 @@ export class QuoteEventsHandler {
   @RabbitSubscribe({
     exchange: 'quote_events',
     routingKey: 'quote_request.created',
-    // queue: 'notification_service_quote_request_created',
   })
   async handleQuoteRequestCreated(message: {
     quoteRequestId: string;
@@ -32,7 +31,6 @@ export class QuoteEventsHandler {
   @RabbitSubscribe({
     exchange: 'quote_events',
     routingKey: 'quote_request.response_submitted',
-    // queue: 'notification_service_quote_response_submitted',
   })
   async handleQuoteResponseSubmitted(message: {
     quoteRequestId: string;
@@ -52,7 +50,6 @@ export class QuoteEventsHandler {
   @RabbitSubscribe({
     exchange: 'quote_events',
     routingKey: 'quote_request.response_accepted',
-    // queue: 'notification_service_quote_response_accepted',
   })
   async handleQuoteResponseAccepted(message: {
     quoteRequestId: string;
@@ -70,7 +67,6 @@ export class QuoteEventsHandler {
   @RabbitSubscribe({
     exchange: 'quote_events',
     routingKey: 'quote_request.response_cancelled',
-    // queue: 'notification_service_quote_request_cancelled',
   })
   async handleQuoteRequestCancelled(message: {
     quoteRequestId: string;
