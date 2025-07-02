@@ -40,6 +40,9 @@ class EnvironmentVariables {
 
   @IsString()
   RABBITMQ_QUEUE: string;
+
+  @IsString()
+  JWT_PUBLIC_KEY: string;
 }
 
 export function validate(config: Record<string, unknown>) {

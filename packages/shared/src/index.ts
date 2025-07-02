@@ -5,6 +5,9 @@ export * from './types/entities';
 export * from './types/events';
 export * from './types/dto';
 
+// Export auth module
+export * from './auth';
+
 // Re-export class-validator decorators
 export {
     IsString,

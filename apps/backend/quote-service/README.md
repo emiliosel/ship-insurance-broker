@@ -9,6 +9,8 @@ Part of the Marine Insurance Quote System, this service handles the creation and
 - Submit and manage quote responses
 - Accept/reject quote responses
 - Real-time notifications via RabbitMQ
+- JWT authentication with role-based access control
+- Multi-tenant isolation
 - Health monitoring
 - OpenAPI documentation
 
@@ -45,6 +47,9 @@ DB_NAME=quote_service
 # RabbitMQ
 RABBITMQ_URL=amqp://localhost:5672
 RABBITMQ_QUEUE=quote_requests
+
+# JWT Authentication
+JWT_PUBLIC_KEY="-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----"
 ```
 
 ## Installation
@@ -69,6 +74,12 @@ Once the service is running, access the Swagger documentation at:
 ```
 http://localhost:8080/api/docs
 ```
+
+## Authentication
+
+The service uses JWT authentication with RS256 algorithm for secure access. All endpoints (except `/health`) require a valid JWT token with appropriate role claims.
+
+For detailed information on how to test the authentication functionality, see the [JWT Authentication Testing Guide](../../../docs/jwt-auth-testing.md).
 
 ## API Endpoints
 
@@ -105,10 +116,17 @@ docker-compose up -d
 src/
 ├── api/              # API layer (controllers, DTOs)
 ├── application/      # Application services
-├── config/          # Configuration
-├── domain/          # Domain entities and logic
-└── infrastructure/  # External services and persistence
+├── config/           # Configuration
+├── domain/           # Domain entities and logic
+└── infrastructure/   # External services and persistence
 ```
+
+The authentication system is implemented using the shared auth module from the `@quote-system/shared` package, which provides:
+
+- JWT validation using public key
+- Role-based access control (Requester/Responder roles)
+- Tenant isolation
+- Public endpoint decorator
 
 ### Testing
 
@@ -136,7 +154,7 @@ The service emits the following events via RabbitMQ:
 
 - `quote_request.created` - New quote request created
 - `quote_request.response_submitted` - Response submitted to quote
-- `quote_request.response_decision` - Quote response accepted/rejected
+- `quote_request.response_accepted` - Quote response accepted
 - `quote_request.cancelled` - Quote request cancelled
 
 ## Error Handling

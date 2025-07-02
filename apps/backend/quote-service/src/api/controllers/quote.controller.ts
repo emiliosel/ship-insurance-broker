@@ -1,5 +1,6 @@
-import { Controller, Get, Post, Body, Param, Put, Delete, HttpStatus, HttpException, UseInterceptors, ClassSerializerInterceptor } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Param, Put, Delete, HttpStatus, HttpException, UseInterceptors, ClassSerializerInterceptor, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { JwtAuthGuard, RolesGuard, Roles } from '@quote-system/shared';
 import { QuoteService } from '../../application/services/quote.service';
 import { CreateQuoteRequestDto } from '../dto/create-quote-request.dto';
 import { QuoteRequest } from '../../domain/entities/quote-request.entity';
@@ -8,10 +9,13 @@ import { VoyageData } from '../../domain/types';
 @ApiTags('quote-requests')
 @Controller('quote-requests')
 @UseInterceptors(ClassSerializerInterceptor)
+@ApiBearerAuth('JWT-auth')
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class QuoteController {
   constructor(private readonly quoteService: QuoteService) {}
 
   @Post()
+  @Roles('requester')
   @ApiOperation({ summary: 'Create a new quote request' })
   @ApiResponse({
     status: 201,
@@ -40,6 +44,7 @@ export class QuoteController {
   }
 
   @Get('requester/:requesterId')
+  @Roles('requester')
   @ApiOperation({ summary: 'Get all quote requests for a requester' })
   @ApiResponse({
     status: 200,
@@ -59,6 +64,7 @@ export class QuoteController {
   }
 
   @Get('responder/:responderId/pending')
+  @Roles('responder')
   @ApiOperation({ summary: 'Get pending quote requests for a responder' })
   @ApiResponse({
     status: 200,
@@ -78,6 +84,7 @@ export class QuoteController {
   }
 
   @Put(':quoteRequestId/responses/:responderId')
+  @Roles('responder')
   @ApiOperation({ summary: 'Submit a response to a quote request' })
   @ApiResponse({
     status: 200,
@@ -106,6 +113,7 @@ export class QuoteController {
   }
 
   @Put(':quoteRequestId/accept/:responderId')
+  @Roles('requester')
   @ApiOperation({ summary: 'Accept a response for a quote request' })
   @ApiResponse({
     status: 200,
@@ -128,6 +136,7 @@ export class QuoteController {
   }
 
   @Delete(':quoteRequestId')
+  @Roles('requester')
   @ApiOperation({ summary: 'Cancel a quote request' })
   @ApiResponse({
     status: 200,

@@ -16,14 +16,15 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
+    "@golevelup/nestjs-rabbitmq": "6.0.1",
     "@nestjs/common": "^10.0.0",
     "@nestjs/config": "^3.0.0",
     "@nestjs/core": "^10.0.0",
+    "@nestjs/jwt": "^11.0.0",
     "@nestjs/microservices": "^10.4.19",
     "@nestjs/platform-express": "^10.0.0",
     "@nestjs/swagger": "^7.0.0",
     "@nestjs/typeorm": "^10.0.0",
-    "@golevelup/nestjs-rabbitmq": "6.0.1",
     "@quote-system/shared": "workspace:*",
     "amqplib": "^0.10.0",
     "class-transformer": "^0.5.1",

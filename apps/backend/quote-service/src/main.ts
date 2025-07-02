@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { JwtAuthGuard } from '@quote-system/shared';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -17,12 +18,27 @@ async function bootstrap() {
   // CORS
   app.enableCors();
 
+  // Global guards
+  // Uncomment this line to enable global authentication
+  // app.useGlobalGuards(new JwtAuthGuard());
+
   // Swagger documentation
   const config = new DocumentBuilder()
     .setTitle('Quote Service API')
     .setDescription('API documentation for the insurance quote requests service')
     .setVersion('1.0')
     .addTag('quote-requests')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'JWT',
+        description: 'Enter JWT token',
+        in: 'header',
+      },
+      'JWT-auth',
+    )
     .build();
     
   const document = SwaggerModule.createDocument(app, config);

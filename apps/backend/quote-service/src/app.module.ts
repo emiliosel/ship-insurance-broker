@@ -1,4 +1,6 @@
-import { Module } from '@nestjs/common';
+import { Module, ValidationPipe } from '@nestjs/common';
+import { APP_GUARD, APP_PIPE } from '@nestjs/core';
+import { JwtAuthGuard, RolesGuard, SharedAuthModule } from '@quote-system/shared';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
@@ -12,6 +14,7 @@ import { RabbitMQService } from './infrastructure/messaging/rabbitmq.service';
 import { validate } from './config/env.validation';
 import databaseConfig from './config/database.config';
 import rabbitmqConfig from './config/rabbitmq.config';
+import authConfig from './config/auth.config';
 import { RabbitMQModule as GolevelupRabbitMQModule } from '@golevelup/nestjs-rabbitmq';
 import { HealthController } from './api/controllers/health.controller';
 
@@ -20,7 +23,14 @@ import { HealthController } from './api/controllers/health.controller';
     ConfigModule.forRoot({
       isGlobal: true,
       validate,
-      load: [databaseConfig, rabbitmqConfig],
+      load: [databaseConfig, rabbitmqConfig, authConfig],
+    }),
+    SharedAuthModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        publicKey: configService.getOrThrow<string>('auth.jwtPublicKey'),
+      }),
     }),
     GolevelupRabbitMQModule.forRootAsync({
       inject: [ConfigService],
@@ -73,6 +83,14 @@ import { HealthController } from './api/controllers/health.controller';
     //   provide: 'IQuoteRequestRepository',
     //   useClass: QuoteRequestRepository,
     // },
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
+    },
   ],
 })
 export class AppModule {}
