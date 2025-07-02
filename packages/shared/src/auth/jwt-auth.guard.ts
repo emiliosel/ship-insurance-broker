@@ -71,7 +71,6 @@ export class JwtAuthGuard implements CanActivate {
 
   /**
    * Gets the current user from the request object
-   *
    * @param request The request object
    * @returns The current user
    */
