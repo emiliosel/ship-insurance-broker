@@ -14,6 +14,11 @@ import rabbitmqConfig from './config/rabbitmq.config';
 import authConfig from './config/auth.config';
 import { RabbitMQModule as GolevelupRabbitMQModule } from '@golevelup/nestjs-rabbitmq';
 import { HealthController } from './api/controllers/health.controller';
+import { Notification } from './domain/entities/notification.entity';
+import { NotificationController } from './api/controllers/notification.controller';
+import { NotificationService } from './application/services/notification.service';
+import { NotificationRepository } from './infrastructure/persistence/notification.repository';
+import { QuoteEventsHandler } from './infrastructure/messaging/quote-events.handler';
 
 @Module({
   imports: [
@@ -68,22 +73,23 @@ import { HealthController } from './api/controllers/health.controller';
         username: configService.getOrThrow('database.username'),
         password: configService.getOrThrow('database.password'),
         database: configService.getOrThrow('database.name'),
-        entities: [],
+        entities: [Notification],
         synchronize: configService.getOrThrow('database.synchronize'),
         logging: 'all',
       }),
     }),
-    // TypeOrmModule.forFeature([QuoteRequest, ResponderAssignment]),
+    TypeOrmModule.forFeature([Notification]),
     // RabbitMQService,
   ],
-  controllers: [HealthController],
+  controllers: [HealthController, NotificationController],
   providers: [
-    // QuoteService,
+    NotificationService,
     RabbitMQService,
-    // QuoteRequestRepository,
+    NotificationRepository,
+    QuoteEventsHandler,
     // {
-    //   provide: 'IQuoteRequestRepository',
-    //   useClass: QuoteRequestRepository,
+    //   provide: 'INotificationRepository',
+    //   useClass: NotificationRepository,
     // },
     {
       provide: APP_GUARD,

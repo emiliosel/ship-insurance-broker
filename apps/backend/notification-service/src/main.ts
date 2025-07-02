@@ -27,7 +27,6 @@ async function bootstrap() {
   // Global guards
   // Uncomment this line to enable global authentication
   // app.useGlobalGuards(new JwtAuthGuard());
-  console.log('test');
 
   // Swagger documentation
   const config = new DocumentBuilder()
@@ -60,7 +59,7 @@ async function bootstrap() {
 
   await app.listen(port, '0.0.0.0');
   console.log(`Application is running on: http://localhost:${port}`);
-  console.log(`Swagger documentation: http://localhost:${port}/api/docs`);
+  console.log(`Swagger documentation: http://localhost:${port}/docs`);
 }
 
 bootstrap();

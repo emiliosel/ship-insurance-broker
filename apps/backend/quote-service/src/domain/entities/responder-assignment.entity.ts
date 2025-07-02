@@ -57,8 +57,8 @@ export class ResponderAssignment {
   }
 
   reject(): void {
-    if (this.status !== ResponseStatus.SUBMITTED) {
-      throw new Error('Only submitted responses can be rejected');
+    if (this.status !== ResponseStatus.SUBMITTED && this.status !== ResponseStatus.PENDING) {
+      throw new Error('Only submitted or pending responses can be rejected');
     }
     this.status = ResponseStatus.REJECTED;
   }
