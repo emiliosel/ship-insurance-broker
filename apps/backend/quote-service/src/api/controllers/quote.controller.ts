@@ -1,11 +1,13 @@
-import { Controller, Get, Post, Body, Param, Put, Delete, HttpStatus, HttpException } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Param, Put, Delete, HttpStatus, HttpException, UseInterceptors, ClassSerializerInterceptor } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { QuoteService } from '../../application/services/quote.service';
 import { CreateQuoteRequestDto } from '../dto/create-quote-request.dto';
 import { QuoteRequest } from '../../domain/entities/quote-request.entity';
+import { VoyageData } from '../../domain/types';
 
 @ApiTags('quote-requests')
 @Controller('quote-requests')
+@UseInterceptors(ClassSerializerInterceptor)
 export class QuoteController {
   constructor(private readonly quoteService: QuoteService) {}
 
@@ -18,11 +20,17 @@ export class QuoteController {
   })
   async createQuoteRequest(@Body() dto: CreateQuoteRequestDto): Promise<QuoteRequest> {
     try {
-      return await this.quoteService.createQuoteRequest(
+      const voyageData: VoyageData = {
+        ...dto.voyageData,
+        departureDate: new Date(dto.voyageData.departureDate)
+      };
+
+      const quoteRequest = await this.quoteService.createQuoteRequest(
         dto.requesterId,
-        dto.voyageData.toVoyageData(),
+        voyageData,
         dto.responderIds
       );
+      return quoteRequest;
     } catch (error) {
       throw new HttpException(
         error.message,
@@ -40,7 +48,8 @@ export class QuoteController {
   })
   async getQuotesByRequesterId(@Param('requesterId') requesterId: string): Promise<QuoteRequest[]> {
     try {
-      return await this.quoteService.findByRequesterId(requesterId);
+      const quoteRequests = await this.quoteService.findByRequesterId(requesterId);
+      return quoteRequests;
     } catch (error) {
       throw new HttpException(
         error.message,
@@ -58,7 +67,8 @@ export class QuoteController {
   })
   async getPendingQuotesByResponderId(@Param('responderId') responderId: string): Promise<QuoteRequest[]> {
     try {
-      return await this.quoteService.findPendingByResponderId(responderId);
+      const quoteRequests = await this.quoteService.findPendingByResponderId(responderId);
+      return quoteRequests;
     } catch (error) {
       throw new HttpException(
         error.message,
@@ -80,12 +90,13 @@ export class QuoteController {
     @Body() response: { price: number; comments: string }
   ): Promise<QuoteRequest> {
     try {
-      return await this.quoteService.setResponse(
+      const quoteRequest = await this.quoteService.setResponse(
         quoteRequestId,
         responderId,
         response.price,
         response.comments
       );
+      return quoteRequest;
     } catch (error) {
       throw new HttpException(
         error.message,
@@ -106,7 +117,8 @@ export class QuoteController {
     @Param('responderId') responderId: string
   ): Promise<QuoteRequest> {
     try {
-      return await this.quoteService.acceptResponse(quoteRequestId, responderId);
+      const quoteRequest = await this.quoteService.acceptResponse(quoteRequestId, responderId);
+      return quoteRequest;
     } catch (error) {
       throw new HttpException(
         error.message,
@@ -121,10 +133,11 @@ export class QuoteController {
     status: 200,
     description: 'The quote request has been successfully cancelled',
     type: QuoteRequest
-  })
+  })  
   async cancelQuoteRequest(@Param('quoteRequestId') quoteRequestId: string): Promise<QuoteRequest> {
     try {
-      return await this.quoteService.cancelQuoteRequest(quoteRequestId);
+      const quoteRequest = await this.quoteService.cancelQuoteRequest(quoteRequestId);
+      return quoteRequest;
     } catch (error) {
       throw new HttpException(
         error.message,

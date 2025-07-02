@@ -1,4 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import { Exclude, Transform, TransformFnParams } from 'class-transformer';
 import { ResponderAssignment } from './responder-assignment.entity';
 import { VoyageData, QuoteRequestStatus } from '../types';
 import {
@@ -29,6 +30,19 @@ export class QuoteRequest {
     cascade: true,
     eager: true
   })
+  @Transform(({ value }: TransformFnParams) => 
+    Array.isArray(value) 
+      ? value.map((assignment: ResponderAssignment) => ({
+          id: assignment.id,
+          responderId: assignment.responderId,
+          status: assignment.status,
+          price: assignment.price,
+          comments: assignment.comments,
+          createdAt: assignment.createdAt,
+          updatedAt: assignment.updatedAt
+        }))
+      : value
+  )
   responderAssignments: ResponderAssignment[];
 
   @CreateDateColumn()
