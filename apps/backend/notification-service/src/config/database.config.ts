@@ -11,10 +11,5 @@ export default registerAs('database', () => {
     synchronize: process.env.NODE_ENV !== 'production',
   };
 
-  console.log('Database Config:', {
-    ...config,
-    password: '***',
-  });
-
   return config;
 });
