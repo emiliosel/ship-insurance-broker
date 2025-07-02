@@ -3,7 +3,6 @@ export interface EventPayloads {
     companyId: string;
     content: string;
     // ...other properties
-    // voyageData: VoyageData;
   };
 }
 

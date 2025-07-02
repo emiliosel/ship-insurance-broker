@@ -32,14 +32,13 @@ jobs:
               - 'packages/shared/**'
             notification:
               - 'apps/backend/notification-service/**'
-              - 'packages/shared/**'
             quote:
               - 'apps/backend/quote-service/**'
-              - 'packages/shared/**'
 
   shared:
     needs: changes
-    if: ${{ needs.changes.outputs.shared == 'true' }}
+    # execute only if the other services have no change
+    if: ${{ needs.changes.outputs.shared == 'true' && needs.changes.outputs.notification === 'false' && needs.changes.outputs.quote === 'false' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -81,9 +80,9 @@ jobs:
         run: cd packages/shared && pnpm build
 
   notification-service:
-    needs: [changes, shared]
+    needs: changes
     if: |
-      needs.changes.outputs.notification == 'true' ||
+      needs.changes.outputs.notification-srvice == 'true' ||
       needs.changes.outputs.shared == 'true'
     runs-on: ubuntu-latest
     steps:
@@ -141,7 +140,7 @@ jobs:
           cache-to: type=gha,mode=max
 
   quote-service:
-    needs: [changes, shared]
+    needs: changes
     if: |
       needs.changes.outputs.quote == 'true' ||
       needs.changes.outputs.shared == 'true'
