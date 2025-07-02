@@ -30,6 +30,6 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "**/*.spec.ts"]
+  "include": ["src/**/*.ts", "src/**/*.spec.ts"],
+  "exclude": ["node_modules", "dist"]
 }

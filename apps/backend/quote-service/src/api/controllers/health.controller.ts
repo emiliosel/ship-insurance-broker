@@ -46,8 +46,9 @@ export class HealthController {
       // Check database connection
       await this.dataSource.query('SELECT 1');
       checks.database = 'ok';
-    } catch {
+    } catch (error) {
       checks.database = 'error';
+      console.error('Database health check failed:', error);
     }
 
     try {
@@ -57,8 +58,9 @@ export class HealthController {
       } else {
         checks.rabbitmq = 'error';
       }
-    } catch {
+    } catch (error) {
       checks.rabbitmq = 'error';
+      console.error('RabbitMQ health check failed:', error);
     }
 
     return {
