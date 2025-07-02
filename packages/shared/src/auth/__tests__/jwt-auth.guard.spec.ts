@@ -89,8 +89,8 @@ describe("JwtAuthGuard", () => {
       }),
     } as ExecutionContext;
 
-    const mockPayload = { sub: "123", companyId: "456" };
-    const mockUser = { id: "123", companyId: "456" };
+    const mockPayload = { sub: "123", companyId: "457" };
+    const mockUser = { id: "123", companyId: "457" };
 
     (reflector.getAllAndOverride as jest.Mock).mockReturnValue(false);
     (jwtService.validateToken as jest.Mock).mockReturnValue(mockPayload);
