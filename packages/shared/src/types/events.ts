@@ -1,4 +1,4 @@
-import { VoyageData } from './entities';
+import { VoyageData } from "./entities";
 
 // Event payload interfaces
 export interface QuoteCreatedEvent {

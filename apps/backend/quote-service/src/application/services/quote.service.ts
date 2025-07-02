@@ -6,7 +6,7 @@ import { RabbitMQService } from '../../infrastructure/messaging/rabbitmq.service
 
 /**
  * Service for managing quote requests with tenant isolation
- * 
+ *
  * This service implements tenant isolation by:
  * 1. Using company IDs (tenant IDs) for requesterId and responderId fields
  * 2. Enforcing access control checks to ensure companies can only access their own data
@@ -18,7 +18,7 @@ import {
   ResponderNotFoundException,
   InvalidQuoteRequestStateException,
   QuoteRequestAlreadyFinalizedException,
-  QuoteResponseAlreadySubmittedException
+  QuoteResponseAlreadySubmittedException,
 } from '../../domain/exceptions';
 
 @Injectable()
@@ -27,27 +27,27 @@ export class QuoteService {
 
   constructor(
     private readonly quoteRequestRepository: QuoteRequestRepository,
-    private readonly messagingService: RabbitMQService
+    private readonly messagingService: RabbitMQService,
   ) {}
 
   async createQuoteRequest(
     requesterId: string,
     voyageData: VoyageData,
-    responderIds: string[]
+    responderIds: string[],
   ): Promise<QuoteRequest> {
     this.logger.debug(`Creating quote request for requester: ${requesterId}`);
-    
+
     const quoteRequest = await this.quoteRequestRepository.create(
       requesterId,
       voyageData,
-      responderIds
+      responderIds,
     );
 
     await this.messagingService.emit('quote_request.created', {
       quoteRequestId: quoteRequest.id,
       requesterId,
       responderIds,
-      voyageData
+      voyageData,
     });
 
     return quoteRequest;
@@ -59,7 +59,9 @@ export class QuoteService {
   }
 
   async findPendingByResponderId(responderId: string): Promise<QuoteRequest[]> {
-    this.logger.debug(`Finding pending quote requests for responder: ${responderId}`);
+    this.logger.debug(
+      `Finding pending quote requests for responder: ${responderId}`,
+    );
     return this.quoteRequestRepository.findPendingByResponderId(responderId);
   }
 
@@ -67,11 +69,14 @@ export class QuoteService {
     quoteRequestId: string,
     responderCompanyId: string,
     price: number,
-    comments: string
+    comments: string,
   ): Promise<QuoteRequest> {
-    this.logger.debug(`Setting response for quote request: ${quoteRequestId}, responder company: ${responderCompanyId}`);
+    this.logger.debug(
+      `Setting response for quote request: ${quoteRequestId}, responder company: ${responderCompanyId}`,
+    );
 
-    const quoteRequest = await this.quoteRequestRepository.findById(quoteRequestId);
+    const quoteRequest =
+      await this.quoteRequestRepository.findById(quoteRequestId);
     if (!quoteRequest) {
       throw new QuoteRequestNotFoundException(quoteRequestId);
     }
@@ -86,29 +91,39 @@ export class QuoteService {
     }
 
     responder.submitResponse(price, comments);
-    const updatedQuoteRequest = await this.quoteRequestRepository.save(quoteRequest);
+    const updatedQuoteRequest =
+      await this.quoteRequestRepository.save(quoteRequest);
 
     await this.messagingService.emit('quote_request.response_submitted', {
       quoteRequestId,
       responderId: responderCompanyId,
       price,
-      comments
+      comments,
     });
 
     return updatedQuoteRequest;
   }
 
-  async acceptResponse(quoteRequestId: string, responderId: string, requesterCompanyId: string): Promise<QuoteRequest> {
-    this.logger.debug(`Accepting response for quote request: ${quoteRequestId}, responder: ${responderId}`);
+  async acceptResponse(
+    quoteRequestId: string,
+    responderId: string,
+    requesterCompanyId: string,
+  ): Promise<QuoteRequest> {
+    this.logger.debug(
+      `Accepting response for quote request: ${quoteRequestId}, responder: ${responderId}`,
+    );
 
-    const quoteRequest = await this.quoteRequestRepository.findById(quoteRequestId);
+    const quoteRequest =
+      await this.quoteRequestRepository.findById(quoteRequestId);
     if (!quoteRequest) {
       throw new QuoteRequestNotFoundException(quoteRequestId);
     }
 
     // Ensure tenant isolation - only the requester company that created the quote request can accept responses
     if (quoteRequest.requesterId !== requesterCompanyId) {
-      throw new UnauthorizedException(`Company ${requesterCompanyId} is not authorized to accept responses for this quote request`);
+      throw new UnauthorizedException(
+        `Company ${requesterCompanyId} is not authorized to accept responses for this quote request`,
+      );
     }
 
     const responder = quoteRequest.findResponder(responderId);
@@ -121,32 +136,45 @@ export class QuoteService {
     }
 
     if (!responder.hasSubmittedResponse()) {
-      throw new InvalidQuoteRequestStateException(quoteRequestId, 'PENDING', 'RESPONDED');
+      throw new InvalidQuoteRequestStateException(
+        quoteRequestId,
+        'PENDING',
+        'RESPONDED',
+      );
     }
 
     quoteRequest.acceptResponse(responderId);
-    const updatedQuoteRequest = await this.quoteRequestRepository.save(quoteRequest);
+    const updatedQuoteRequest =
+      await this.quoteRequestRepository.save(quoteRequest);
 
     await this.messagingService.emit('quote_request.response_accepted', {
       quoteRequestId,
       responderId,
-      rejectedResponderIds: quoteRequest.responderAssignments.filter(r => r.responderId !== responderId).map(r => r.responderId)
+      rejectedResponderIds: quoteRequest.responderAssignments
+        .filter((r) => r.responderId !== responderId)
+        .map((r) => r.responderId),
     });
 
     return updatedQuoteRequest;
   }
 
-  async cancelQuoteRequest(quoteRequestId: string, requesterCompanyId: string): Promise<QuoteRequest> {
+  async cancelQuoteRequest(
+    quoteRequestId: string,
+    requesterCompanyId: string,
+  ): Promise<QuoteRequest> {
     this.logger.debug(`Cancelling quote request: ${quoteRequestId}`);
 
-    const quoteRequest = await this.quoteRequestRepository.findById(quoteRequestId);
+    const quoteRequest =
+      await this.quoteRequestRepository.findById(quoteRequestId);
     if (!quoteRequest) {
       throw new QuoteRequestNotFoundException(quoteRequestId);
     }
 
     // Ensure tenant isolation - only the requester company that created the quote request can cancel it
     if (quoteRequest.requesterId !== requesterCompanyId) {
-      throw new UnauthorizedException(`Company ${requesterCompanyId} is not authorized to cancel this quote request`);
+      throw new UnauthorizedException(
+        `Company ${requesterCompanyId} is not authorized to cancel this quote request`,
+      );
     }
 
     if (quoteRequest.isFinalized()) {
@@ -154,11 +182,12 @@ export class QuoteService {
     }
 
     quoteRequest.cancel();
-    const updatedQuoteRequest = await this.quoteRequestRepository.save(quoteRequest);
+    const updatedQuoteRequest =
+      await this.quoteRequestRepository.save(quoteRequest);
 
     await this.messagingService.emit('quote_request.cancelled', {
       quoteRequestId,
-      responderIds: quoteRequest.responderAssignments.map(r => r.responderId)
+      responderIds: quoteRequest.responderAssignments.map((r) => r.responderId),
     });
 
     return updatedQuoteRequest;

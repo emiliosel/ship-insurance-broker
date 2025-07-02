@@ -1,4 +1,11 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToMany,
+} from 'typeorm';
 import { VoyageData, QuoteRequestStatus } from './types';
 import { ResponderAssignment } from './responder-assignment.entity';
 import { IQuoteRequest } from './interfaces';
@@ -17,13 +24,17 @@ export class QuoteRequest implements IQuoteRequest {
   @Column({
     type: 'enum',
     enum: QuoteRequestStatus,
-    default: QuoteRequestStatus.PENDING
+    default: QuoteRequestStatus.PENDING,
   })
   status: QuoteRequestStatus;
 
-  @OneToMany(() => ResponderAssignment, assignment => assignment.quoteRequest, {
-    cascade: true
-  })
+  @OneToMany(
+    () => ResponderAssignment,
+    (assignment) => assignment.quoteRequest,
+    {
+      cascade: true,
+    },
+  )
   responderAssignments: ResponderAssignment[];
 
   @CreateDateColumn()
@@ -34,20 +45,22 @@ export class QuoteRequest implements IQuoteRequest {
 
   // Domain methods
   assignResponder(responderId: string): void {
-    if (this.status === QuoteRequestStatus.COMPLETED || 
-        this.status === QuoteRequestStatus.CANCELLED) {
+    if (
+      this.status === QuoteRequestStatus.COMPLETED ||
+      this.status === QuoteRequestStatus.CANCELLED
+    ) {
       throw new Error('Cannot assign responders to a finalized quote request');
     }
 
     const newAssignment = new ResponderAssignment();
     newAssignment.responderId = responderId;
     newAssignment.quoteRequest = this;
-    
+
     if (!this.responderAssignments) {
       this.responderAssignments = [];
     }
-    
-    if (this.responderAssignments.find(a => a.responderId === responderId)) {
+
+    if (this.responderAssignments.find((a) => a.responderId === responderId)) {
       throw new Error('Responder already assigned to this quote request');
     }
 
@@ -56,13 +69,17 @@ export class QuoteRequest implements IQuoteRequest {
   }
 
   submitResponse(responderId: string, price: number, comments: string): void {
-    if (this.status === QuoteRequestStatus.COMPLETED || 
-        this.status === QuoteRequestStatus.CANCELLED) {
+    if (
+      this.status === QuoteRequestStatus.COMPLETED ||
+      this.status === QuoteRequestStatus.CANCELLED
+    ) {
       throw new Error('Cannot submit response to a finalized quote request');
     }
 
-    const assignment = this.responderAssignments?.find(a => a.responderId === responderId);
-    
+    const assignment = this.responderAssignments?.find(
+      (a) => a.responderId === responderId,
+    );
+
     if (!assignment) {
       throw new Error('Responder not assigned to this quote request');
     }
@@ -71,8 +88,10 @@ export class QuoteRequest implements IQuoteRequest {
   }
 
   updateStatus(newStatus: QuoteRequestStatus): void {
-    if (this.status === QuoteRequestStatus.COMPLETED || 
-        this.status === QuoteRequestStatus.CANCELLED) {
+    if (
+      this.status === QuoteRequestStatus.COMPLETED ||
+      this.status === QuoteRequestStatus.CANCELLED
+    ) {
       throw new Error('Cannot update status of a finalized quote request');
     }
     this.status = newStatus;

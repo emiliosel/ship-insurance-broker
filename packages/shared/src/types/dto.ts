@@ -1,6 +1,18 @@
-import { IsString, IsEnum, IsUUID, IsOptional, IsNumber, IsDate, ValidateNested } from 'class-validator';
-import { Type } from 'class-transformer';
-import { VoyageData, QuoteRequestStatus, ResponderAssignmentStatus } from './entities';
+import {
+  IsString,
+  IsEnum,
+  IsUUID,
+  IsOptional,
+  IsNumber,
+  IsDate,
+  ValidateNested,
+} from "class-validator";
+import { Type } from "class-transformer";
+import {
+  VoyageData,
+  QuoteRequestStatus,
+  ResponderAssignmentStatus,
+} from "./entities";
 
 export class VesselDto {
   @IsString()
@@ -59,7 +71,7 @@ export class CreateQuoteRequestDto {
   @Type(() => VoyageDataDto)
   voyageData: VoyageDataDto;
 
-  @IsUUID('4', { each: true })
+  @IsUUID("4", { each: true })
   responderIds: string[];
 }
 

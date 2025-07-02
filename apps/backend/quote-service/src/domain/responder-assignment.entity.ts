@@ -1,4 +1,12 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { QuoteRequest } from './quote-request.entity';
 import { IResponderAssignment } from './interfaces';
 
@@ -22,7 +30,10 @@ export class ResponderAssignment implements IResponderAssignment {
   @Column({ type: 'timestamp', nullable: true })
   responseDate: Date;
 
-  @ManyToOne(() => QuoteRequest, quoteRequest => quoteRequest.responderAssignments)
+  @ManyToOne(
+    () => QuoteRequest,
+    (quoteRequest) => quoteRequest.responderAssignments,
+  )
   @JoinColumn({ name: 'quote_request_id' })
   quoteRequest: QuoteRequest;
 

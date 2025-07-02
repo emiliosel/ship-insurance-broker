@@ -29,8 +29,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
       status = HttpStatus.FORBIDDEN;
       const responseBody = exception.getResponse();
       if (typeof responseBody === 'object') {
-        message = (responseBody as any).message || 'Forbidden';
-        error = (responseBody as any).error || 'Forbidden';
+        message = (responseBody as { message: string }).message || 'Forbidden';
+        error = (responseBody as { error: string }).error || 'Forbidden';
       } else {
         message = responseBody;
       }
@@ -39,8 +39,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
       status = HttpStatus.UNAUTHORIZED;
       const responseBody = exception.getResponse();
       if (typeof responseBody === 'object') {
-        message = (responseBody as any).message || 'Unauthorized';
-        error = (responseBody as any).error || 'Unauthorized';
+        message =
+          (responseBody as { message: string }).message || 'Unauthorized';
+        error = (responseBody as { error: string }).error || 'Unauthorized';
       } else {
         message = responseBody;
       }
@@ -49,8 +50,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
       status = exception.getStatus();
       const responseBody = exception.getResponse();
       if (typeof responseBody === 'object') {
-        message = (responseBody as any).message || message;
-        error = (responseBody as any).error || error;
+        message = (responseBody as { message: string }).message || message;
+        error = (responseBody as { error: string }).error || error;
       } else {
         message = responseBody;
       }
@@ -70,20 +71,18 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     // Structure the error response
     const errorResponse = {
-      statusCode: status,
-      timestamp: new Date().toISOString(),
-      path: request.url,
-      method: request.method,
       error,
       message: Array.isArray(message) ? message : [message],
+      stack: undefined,
     };
 
-    // Add additional debug information in development
-    if (process.env.NODE_ENV !== 'production') {
-      (errorResponse as any).stack = 
-        exception instanceof Error ? exception.stack : undefined;
-    }
-
-    response.status(status).json(errorResponse);
+    response.status(status).json({
+      ...errorResponse,
+      // Add additional debug information in development
+      stack:
+        process.env.NODE_ENV !== 'production' && exception instanceof Error
+          ? exception.stack
+          : undefined,
+    });
   }
 }

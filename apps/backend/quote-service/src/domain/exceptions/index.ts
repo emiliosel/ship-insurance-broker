@@ -15,16 +15,20 @@ export class ResponderNotFoundException extends Error {
 export class InvalidQuoteRequestStateException extends Error {
   constructor(requestId: string, currentState: string, requiredState: string) {
     super(
-      `Quote request ${requestId} is in ${currentState} state, but ${requiredState} is required`
+      `Quote request ${requestId} is in ${currentState} state, but ${requiredState} is required`,
     );
     this.name = 'InvalidQuoteRequestStateException';
   }
 }
 
 export class InvalidResponderStateException extends Error {
-  constructor(responderId: string, currentState: string, requiredState: string) {
+  constructor(
+    responderId: string,
+    currentState: string,
+    requiredState: string,
+  ) {
     super(
-      `Responder ${responderId} is in ${currentState} state, but ${requiredState} is required`
+      `Responder ${responderId} is in ${currentState} state, but ${requiredState} is required`,
     );
     this.name = 'InvalidResponderStateException';
   }
@@ -39,7 +43,9 @@ export class QuoteRequestAlreadyFinalizedException extends Error {
 
 export class InvalidResponderAssignmentException extends Error {
   constructor(responderId: string, requestId: string) {
-    super(`Responder ${responderId} is not assigned to quote request ${requestId}`);
+    super(
+      `Responder ${responderId} is not assigned to quote request ${requestId}`,
+    );
     this.name = 'InvalidResponderAssignmentException';
   }
 }

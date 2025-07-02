@@ -1,5 +1,10 @@
-import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
-import { JwtAuthGuard } from './jwt-auth.guard';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+} from "@nestjs/common";
+import { JwtAuthGuard } from "./jwt-auth.guard";
 
 /**
  * Guard that enforces tenant isolation
@@ -9,7 +14,7 @@ import { JwtAuthGuard } from './jwt-auth.guard';
 export class TenantGuard implements CanActivate {
   /**
    * Checks if the user has access to the requested tenant resource
-   * 
+   *
    * @param context The execution context
    * @returns True if the user has access to the requested tenant resource, false otherwise
    * @throws ForbiddenException if the user doesn't have access to the requested tenant resource
@@ -20,7 +25,7 @@ export class TenantGuard implements CanActivate {
 
     // If no user is attached to the request, deny access
     if (!user) {
-      throw new ForbiddenException('User not authenticated');
+      throw new ForbiddenException("User not authenticated");
     }
 
     // Get the tenant ID from the request parameters
@@ -33,7 +38,9 @@ export class TenantGuard implements CanActivate {
 
     // Check if the user belongs to the requested tenant
     if (user.companyId !== tenantId) {
-      throw new ForbiddenException('Access to this tenant resource is forbidden');
+      throw new ForbiddenException(
+        "Access to this tenant resource is forbidden",
+      );
     }
 
     return true;
@@ -42,7 +49,7 @@ export class TenantGuard implements CanActivate {
   /**
    * Extracts the tenant ID from the request
    * Override this method in a subclass to customize how the tenant ID is extracted
-   * 
+   *
    * @param request The request object
    * @returns The tenant ID if found, undefined otherwise
    */

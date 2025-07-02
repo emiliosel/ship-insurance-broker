@@ -1,8 +1,13 @@
-import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
-import { JwtService } from './jwt.service';
-import { User } from './types';
-import { IS_PUBLIC_KEY } from './public.decorator';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  UnauthorizedException,
+} from "@nestjs/common";
+import { Reflector } from "@nestjs/core";
+import { JwtService } from "./jwt.service";
+import { User } from "./types";
+import { IS_PUBLIC_KEY } from "./public.decorator";
 
 /**
  * Guard that validates JWT tokens in the Authorization header
@@ -18,17 +23,17 @@ export class JwtAuthGuard implements CanActivate {
   /**
    * Validates the JWT token in the Authorization header
    * and attaches the user to the request object
-   * 
+   *
    * @param context The execution context
    * @returns True if the token is valid, false otherwise
    * @throws UnauthorizedException if the token is missing or invalid
    */
   canActivate(context: ExecutionContext): boolean {
     // Check if the route is marked as public
-    const isPublic = this.reflector.getAllAndOverride<boolean>(
-      IS_PUBLIC_KEY,
-      [context.getHandler(), context.getClass()],
-    );
+    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
 
     // If the route is public, allow access without authentication
     if (isPublic) {
@@ -39,23 +44,23 @@ export class JwtAuthGuard implements CanActivate {
     const authHeader = request.headers.authorization;
 
     if (!authHeader) {
-      throw new UnauthorizedException('Authorization header is missing');
+      throw new UnauthorizedException("Authorization header is missing");
     }
 
-    const [type, token] = authHeader.split(' ');
+    const [type, token] = authHeader.split(" ");
 
-    if (type !== 'Bearer') {
-      throw new UnauthorizedException('Invalid authorization type');
+    if (type !== "Bearer") {
+      throw new UnauthorizedException("Invalid authorization type");
     }
 
     if (!token) {
-      throw new UnauthorizedException('Token is missing');
+      throw new UnauthorizedException("Token is missing");
     }
 
     const payload = this.jwtService.validateToken(token);
 
     if (!payload) {
-      throw new UnauthorizedException('Invalid token');
+      throw new UnauthorizedException("Invalid token");
     }
 
     // Attach the user to the request object
@@ -66,7 +71,7 @@ export class JwtAuthGuard implements CanActivate {
 
   /**
    * Gets the current user from the request object
-   * 
+   *
    * @param request The request object
    * @returns The current user
    */

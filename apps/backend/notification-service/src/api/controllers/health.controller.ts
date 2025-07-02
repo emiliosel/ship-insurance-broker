@@ -46,7 +46,7 @@ export class HealthController {
       // Check database connection
       await this.dataSource.query('SELECT 1');
       checks.database = 'ok';
-    } catch (error) {
+    } catch {
       checks.database = 'error';
     }
 
@@ -57,13 +57,15 @@ export class HealthController {
       } else {
         checks.rabbitmq = 'error';
       }
-    } catch (error) {
+    } catch {
       checks.rabbitmq = 'error';
     }
 
     return {
-      status: Object.values(checks).every(status => status === 'ok') ? 'ok' : 'error',
-      version: this.configService.get('VERSION', '1.0.0'),
+      status: Object.values(checks).every((status) => status === 'ok')
+        ? 'ok'
+        : 'error',
+      version: this.configService.get<string>('VERSION', '1.0.0'),
       timestamp: new Date().toISOString(),
       checks,
     };

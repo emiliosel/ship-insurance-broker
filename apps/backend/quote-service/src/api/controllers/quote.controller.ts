@@ -6,8 +6,6 @@ import {
   Param,
   Put,
   Delete,
-  HttpStatus,
-  HttpException,
   UseInterceptors,
   ClassSerializerInterceptor,
   UseGuards,
@@ -24,10 +22,7 @@ import { QuoteService } from '../../application/services/quote.service';
 import { CreateQuoteRequestDto } from '../dto/create-quote-request.dto';
 import { QuoteRequest } from '../../domain/entities/quote-request.entity';
 import { VoyageData } from '../../domain/types';
-import {
-  QuoteResponseDto,
-  SetQuoteResponseDto,
-} from '../dto/quote-response.dto';
+import { SetQuoteResponseDto } from '../dto/quote-response.dto';
 
 /**
  * Controller for quote request operations with tenant isolation

@@ -1,4 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToMany,
+} from 'typeorm';
 import { Exclude, Transform, TransformFnParams } from 'class-transformer';
 import { ResponderAssignment } from './responder-assignment.entity';
 import { VoyageData, QuoteRequestStatus } from '../types';
@@ -25,16 +32,20 @@ export class QuoteRequest {
   @Column({
     type: 'enum',
     enum: QuoteRequestStatus,
-    default: QuoteRequestStatus.PENDING
+    default: QuoteRequestStatus.PENDING,
   })
   status: QuoteRequestStatus;
 
-  @OneToMany(() => ResponderAssignment, assignment => assignment.quoteRequest, {
-    cascade: true,
-    eager: true
-  })
-  @Transform(({ value }: TransformFnParams) => 
-    Array.isArray(value) 
+  @OneToMany(
+    () => ResponderAssignment,
+    (assignment) => assignment.quoteRequest,
+    {
+      cascade: true,
+      eager: true,
+    },
+  )
+  @Transform(({ value }: TransformFnParams) =>
+    Array.isArray(value)
       ? value.map((assignment: ResponderAssignment) => ({
           id: assignment.id,
           responderId: assignment.responderId,
@@ -42,9 +53,9 @@ export class QuoteRequest {
           price: assignment.price,
           comments: assignment.comments,
           createdAt: assignment.createdAt,
-          updatedAt: assignment.updatedAt
+          updatedAt: assignment.updatedAt,
         }))
-      : value
+      : (value as ResponderAssignment[]),
   )
   responderAssignments: ResponderAssignment[];
 
@@ -56,12 +67,12 @@ export class QuoteRequest {
 
   findResponder(responderId: string): ResponderAssignment | undefined {
     return this.responderAssignments.find(
-      assignment => assignment.responderId === responderId
+      (assignment) => assignment.responderId === responderId,
     );
   }
 
   addResponders(responderIds: string[]): void {
-    this.responderAssignments = responderIds.map(responderId => {
+    this.responderAssignments = responderIds.map((responderId) => {
       const assignment = new ResponderAssignment();
       assignment.responderId = responderId;
       assignment.quoteRequest = this;
@@ -83,7 +94,7 @@ export class QuoteRequest {
       throw new InvalidQuoteRequestStateException(
         this.id,
         this.status,
-        QuoteRequestStatus.RESPONDED
+        QuoteRequestStatus.RESPONDED,
       );
     }
 
@@ -92,8 +103,8 @@ export class QuoteRequest {
 
     // Reject all other responses
     this.responderAssignments
-      .filter(assignment => assignment.responderId !== responderId)
-      .forEach(assignment => assignment.reject());
+      .filter((assignment) => assignment.responderId !== responderId)
+      .forEach((assignment) => assignment.reject());
   }
 
   cancel(): void {
@@ -102,14 +113,14 @@ export class QuoteRequest {
     }
 
     this.status = QuoteRequestStatus.CANCELLED;
-    this.responderAssignments.forEach(assignment => assignment.cancel());
+    this.responderAssignments.forEach((assignment) => assignment.cancel());
   }
 
   isFinalized(): boolean {
     return [
       QuoteRequestStatus.ACCEPTED,
       QuoteRequestStatus.CANCELLED,
-      QuoteRequestStatus.COMPLETED
+      QuoteRequestStatus.COMPLETED,
     ].includes(this.status);
   }
 }

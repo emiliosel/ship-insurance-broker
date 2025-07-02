@@ -1,22 +1,24 @@
-import { Module, ValidationPipe } from '@nestjs/common';
-import { APP_GUARD, APP_PIPE } from '@nestjs/core';
-import { JwtAuthGuard, RolesGuard, SharedAuthModule } from '@quote-system/shared';
+import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
+import {
+  JwtAuthGuard,
+  RolesGuard,
+  SharedAuthModule,
+} from '@quote-system/shared';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
 import { QuoteRequest } from './domain/entities/quote-request.entity';
 import { ResponderAssignment } from './domain/entities/responder-assignment.entity';
 import { QuoteService } from './application/services/quote.service';
 import { QuoteController } from './api/controllers/quote.controller';
 import { QuoteRequestRepository } from './infrastructure/persistence/quote-request.repository';
-// import { RabbitMQService } from './infrastructure/messaging/rabbitmq.service';
 import { RabbitMQService } from './infrastructure/messaging/rabbitmq.service';
+import { RabbitMQModule as GolevelupRabbitMQModule } from '@golevelup/nestjs-rabbitmq';
+import { HealthController } from './api/controllers/health.controller';
 import { validate } from './config/env.validation';
 import databaseConfig from './config/database.config';
 import rabbitmqConfig from './config/rabbitmq.config';
 import authConfig from './config/auth.config';
-import { RabbitMQModule as GolevelupRabbitMQModule } from '@golevelup/nestjs-rabbitmq';
-import { HealthController } from './api/controllers/health.controller';
 
 @Module({
   imports: [
@@ -35,10 +37,7 @@ import { HealthController } from './api/controllers/health.controller';
     GolevelupRabbitMQModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
-
-        console.log('rabbitmq.url: ', configService.getOrThrow<string>('rabbitmq.url'));
-
-        return ({
+        return {
           uri: configService.getOrThrow<string>('rabbitmq.url'),
           exchanges: [
             {
@@ -48,15 +47,17 @@ import { HealthController } from './api/controllers/health.controller';
           ],
           channels: {
             default: {
-              prefetchCount: configService.getOrThrow<number>('rabbitmq.prefetchCount'),
+              prefetchCount: configService.getOrThrow<number>(
+                'rabbitmq.prefetchCount',
+              ),
               default: true,
             },
           },
           enableControllerDiscovery: true,
           defaultRpcTimeout: 10000,
           connectionInitOptions: { wait: true },
-        })
-      } ,
+        };
+      },
     }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
@@ -69,21 +70,18 @@ import { HealthController } from './api/controllers/health.controller';
         database: configService.getOrThrow('database.name'),
         entities: [QuoteRequest, ResponderAssignment],
         synchronize: configService.getOrThrow('database.synchronize'),
-        logging: 'all'
+        logging: configService.getOrThrow('database.synchronize')
+          ? 'all'
+          : ['error', 'warn'],
       }),
     }),
     TypeOrmModule.forFeature([QuoteRequest, ResponderAssignment]),
-    // RabbitMQService,
   ],
   controllers: [QuoteController, HealthController],
   providers: [
     QuoteService,
     RabbitMQService,
     QuoteRequestRepository,
-    // {
-    //   provide: 'IQuoteRequestRepository',
-    //   useClass: QuoteRequestRepository,
-    // },
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,

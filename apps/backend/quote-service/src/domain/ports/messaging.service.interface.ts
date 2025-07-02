@@ -16,7 +16,7 @@ export interface EventPayloads {
   'quote_request.response_accepted': {
     quoteRequestId: string;
     responderId: string;
-    rejectedResponderIds: string[]
+    rejectedResponderIds: string[];
   };
   'quote_request.response_rejected': {
     quoteRequestId: string;
@@ -31,6 +31,6 @@ export interface EventPayloads {
 export interface IMessagingService {
   emit<K extends keyof EventPayloads>(
     routingKey: K,
-    data: EventPayloads[K]
+    data: EventPayloads[K],
   ): Promise<void>;
 }

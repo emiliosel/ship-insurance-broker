@@ -1,4 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 import { QuoteRequest } from './quote-request.entity';
 import { ResponseStatus } from '../types';
 
@@ -16,7 +23,7 @@ export class ResponderAssignment {
   @Column({
     type: 'enum',
     enum: ResponseStatus,
-    default: ResponseStatus.PENDING
+    default: ResponseStatus.PENDING,
   })
   status: ResponseStatus;
 
@@ -26,7 +33,10 @@ export class ResponderAssignment {
   @Column('text', { nullable: true })
   comments?: string;
 
-  @ManyToOne(() => QuoteRequest, quoteRequest => quoteRequest.responderAssignments)
+  @ManyToOne(
+    () => QuoteRequest,
+    (quoteRequest) => quoteRequest.responderAssignments,
+  )
   quoteRequest: QuoteRequest;
 
   @CreateDateColumn()
@@ -57,14 +67,20 @@ export class ResponderAssignment {
   }
 
   reject(): void {
-    if (this.status !== ResponseStatus.SUBMITTED && this.status !== ResponseStatus.PENDING) {
+    if (
+      this.status !== ResponseStatus.SUBMITTED &&
+      this.status !== ResponseStatus.PENDING
+    ) {
       throw new Error('Only submitted or pending responses can be rejected');
     }
     this.status = ResponseStatus.REJECTED;
   }
 
   cancel(): void {
-    if (this.status === ResponseStatus.ACCEPTED || this.status === ResponseStatus.REJECTED) {
+    if (
+      this.status === ResponseStatus.ACCEPTED ||
+      this.status === ResponseStatus.REJECTED
+    ) {
       throw new Error('Cannot cancel a finalized response');
     }
     this.status = ResponseStatus.CANCELLED;

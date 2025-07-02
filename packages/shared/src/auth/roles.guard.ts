@@ -1,15 +1,22 @@
-import { Injectable, CanActivate, ExecutionContext, ForbiddenException, SetMetadata, Logger } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
-import { JwtAuthGuard } from './jwt-auth.guard';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+  SetMetadata,
+  Logger,
+} from "@nestjs/common";
+import { Reflector } from "@nestjs/core";
+import { JwtAuthGuard } from "./jwt-auth.guard";
 
 /**
  * Metadata key for roles
  */
-export const ROLES_KEY = 'roles';
+export const ROLES_KEY = "roles";
 
 /**
  * Decorator for specifying required roles for a route
- * 
+ *
  * @param roles The roles required to access the route
  * @returns The decorator
  */
@@ -25,14 +32,14 @@ export class RolesGuard implements CanActivate {
 
   /**
    * Checks if the user has the required roles
-   * 
+   *
    * @param context The execution context
    * @returns True if the user has the required roles, false otherwise
    * @throws ForbiddenException if the user doesn't have the required roles
    */
   canActivate(context: ExecutionContext): boolean {
     const roles = this.reflector.get<string[]>(ROLES_KEY, context.getHandler());
-    
+
     // If no roles are specified, allow access
     if (!roles || roles.length === 0) {
       return true;
@@ -43,7 +50,7 @@ export class RolesGuard implements CanActivate {
 
     // If no user is attached to the request, deny access
     if (!user) {
-      throw new ForbiddenException('User not authenticated');
+      throw new ForbiddenException("User not authenticated");
     }
 
     // Check if the user has any of the required roles
@@ -51,7 +58,9 @@ export class RolesGuard implements CanActivate {
 
     if (!hasRole) {
       Logger.log(JSON.stringify({ user }));
-      throw new ForbiddenException(`User does not have the required roles: ${roles.join(', ')}`);
+      throw new ForbiddenException(
+        `User does not have the required roles: ${roles.join(", ")}`,
+      );
     }
 
     return true;

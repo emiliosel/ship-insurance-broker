@@ -7,7 +7,7 @@ export enum QuoteRequestStatus {
   ACCEPTED = 'ACCEPTED',
   REJECTED = 'REJECTED',
   CANCELLED = 'CANCELLED',
-  COMPLETED = 'COMPLETED'
+  COMPLETED = 'COMPLETED',
 }
 
 export enum ResponseStatus {
@@ -16,7 +16,7 @@ export enum ResponseStatus {
   RESPONDED = 'RESPONDED',
   ACCEPTED = 'ACCEPTED',
   REJECTED = 'REJECTED',
-  CANCELLED = 'CANCELLED'
+  CANCELLED = 'CANCELLED',
 }
 
 export enum VesselType {

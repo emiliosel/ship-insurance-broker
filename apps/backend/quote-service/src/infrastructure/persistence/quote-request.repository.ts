@@ -1,7 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Repository, DataSource } from 'typeorm';
 import { QuoteRequest } from '../../domain/entities/quote-request.entity';
-import { ResponderAssignment } from '../../domain/entities/responder-assignment.entity';
 import { VoyageData, QuoteRequestStatus } from '../../domain/types';
 import { IQuoteRequestRepository } from '../../domain/ports/quote-request.repository.interface';
 
@@ -17,7 +16,7 @@ export class QuoteRequestRepository implements IQuoteRequestRepository {
   async create(
     requesterId: string,
     voyageData: VoyageData,
-    responderIds: string[]
+    responderIds: string[],
   ): Promise<QuoteRequest> {
     const quoteRequest = new QuoteRequest();
     quoteRequest.requesterId = requesterId;
@@ -27,8 +26,13 @@ export class QuoteRequestRepository implements IQuoteRequestRepository {
 
     try {
       return await this.repository.save(quoteRequest);
-    } catch (error) {
-      this.logger.error(`Failed to create quote request: ${error.message}`, error.stack);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        this.logger.error(
+          `Failed to create quote request: ${error.message}`,
+          error.stack,
+        );
+      }
       throw new Error('Failed to create quote request');
     }
   }
@@ -37,10 +41,15 @@ export class QuoteRequestRepository implements IQuoteRequestRepository {
     try {
       return await this.repository.findOne({
         where: { id },
-        relations: ['responderAssignments']
+        relations: ['responderAssignments'],
       });
-    } catch (error) {
-      this.logger.error(`Failed to find quote request by ID ${id}: ${error.message}`, error.stack);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        this.logger.error(
+          `Failed to find quote request by ID ${id}: ${error.message}`,
+          error.stack,
+        );
+      }
       throw new Error('Failed to find quote request');
     }
   }
@@ -50,10 +59,15 @@ export class QuoteRequestRepository implements IQuoteRequestRepository {
       return await this.repository.find({
         where: { requesterId },
         relations: ['responderAssignments'],
-        order: { createdAt: 'DESC' }
+        order: { createdAt: 'DESC' },
       });
-    } catch (error) {
-      this.logger.error(`Failed to find quote requests for requester ${requesterId}: ${error.message}`, error.stack);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        this.logger.error(
+          `Failed to find quote requests for requester ${requesterId}: ${error.message}`,
+          error.stack,
+        );
+      }
       throw new Error('Failed to find quote requests');
     }
   }
@@ -62,13 +76,25 @@ export class QuoteRequestRepository implements IQuoteRequestRepository {
     try {
       return await this.repository
         .createQueryBuilder('quoteRequest')
-        .leftJoinAndSelect('quoteRequest.responderAssignments', 'responderAssignment')
-        .where('responderAssignment.responderId = :responderId', { responderId })
-        .andWhere('responderAssignment.status = :status', { status: QuoteRequestStatus.PENDING })
+        .leftJoinAndSelect(
+          'quoteRequest.responderAssignments',
+          'responderAssignment',
+        )
+        .where('responderAssignment.responderId = :responderId', {
+          responderId,
+        })
+        .andWhere('responderAssignment.status = :status', {
+          status: QuoteRequestStatus.PENDING,
+        })
         .orderBy('quoteRequest.createdAt', 'DESC')
         .getMany();
-    } catch (error) {
-      this.logger.error(`Failed to find pending quote requests for responder ${responderId}: ${error.message}`, error.stack);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        this.logger.error(
+          `Failed to find pending quote requests for responder ${responderId}: ${error.message}`,
+          error.stack,
+        );
+      }
       throw new Error('Failed to find pending quote requests');
     }
   }
@@ -76,8 +102,13 @@ export class QuoteRequestRepository implements IQuoteRequestRepository {
   async save(quoteRequest: QuoteRequest): Promise<QuoteRequest> {
     try {
       return await this.repository.save(quoteRequest);
-    } catch (error) {
-      this.logger.error(`Failed to save quote request ${quoteRequest.id}: ${error.message}`, error.stack);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        this.logger.error(
+          `Failed to save quote request ${quoteRequest.id}: ${error.message}`,
+          error.stack,
+        );
+      }
       throw new Error('Failed to save quote request');
     }
   }
@@ -85,8 +116,13 @@ export class QuoteRequestRepository implements IQuoteRequestRepository {
   async delete(id: string): Promise<void> {
     try {
       await this.repository.delete(id);
-    } catch (error) {
-      this.logger.error(`Failed to delete quote request ${id}: ${error.message}`, error.stack);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        this.logger.error(
+          `Failed to delete quote request ${id}: ${error.message}`,
+          error.stack,
+        );
+      }
       throw new Error('Failed to delete quote request');
     }
   }
