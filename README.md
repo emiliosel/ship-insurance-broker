@@ -278,7 +278,19 @@ graph TB
 ├── apps
 │   └── backend
 │       ├── notification-service
+│           └── src/
+│               ├── api/              # API layer (controllers, DTOs)
+│               ├── application/      # Application services
+│               ├── config/           # Configuration
+│               ├── domain/           # Domain entities and logic
+│               └── infrastructure/   # External services and persistence
 │       └── quote-service
+│           └── src/
+│               ├── api/              # API layer (controllers, DTOs)
+│               ├── application/      # Application services
+│               ├── config/           # Configuration
+│               ├── domain/           # Domain entities and logic
+│               └── infrastructure/   # External services and persistence
 ├── packages
 │   └── shared
 └── docker-compose.yml
@@ -400,39 +412,80 @@ interface QuoteRequestAcceptedEvent {
 
 Get a JWT token:
 ```bash
-curl -X POST http://localhost:3000/api/auth/login \
-  -H 'Content-Type: application/json' \
-  -d '{"companyId": "company-1", "apiKey": "test-key"}'
+## Create a requester jwt
+npx tsx packages/shared/src/auth/generate-jwt.ts --userId=user-a-1 --email=requester@companya.com --companyId=496efeff-28a5-43a1-9813-dadb5f298e7e --roles=requester
+
+## Create a responder jwt
+npx tsx packages/shared/src/auth/generate-jwt.ts --userId=user-b-1 --email=respondera@companyb.com --companyId=3fa85f64-5717-4562-b3fc-2c963f66afa6 --roles=responder
+
+## Create another responder jwt
+npx tsx packages/shared/src/auth/generate-jwt.ts --userId=user-b-2 --email=responderb@companyb.com --companyId=3fa85f64-5717-4562-b3fc-2c963f66afa7 --roles=responder
 ```
+
+### Using Swagger UI
+
+1. Open the Swagger UI for Quote Service at `http://localhost:8080/api/v1/quotes/docs` and at `http://localhost:8080/api/v1/notifications/docs`
+2. Click the "Authorize" button
+3. Enter your JWT token in the format: `Bearer YOUR_TOKEN`
+4. Click "Authorize" to apply the token to all requests
+5. Test the endpoints with the authorized session
 
 ### Quote Requests
 ```bash
 # Submit a quote request
-curl -X POST http://localhost:3000/api/quote-requests \
+curl -X 'POST' \
+  'http://localhost:8080/api/v1/quotes/quote-requests' \
+  -H 'accept: application/json' \
   -H 'Authorization: Bearer <token>' \
   -H 'Content-Type: application/json' \
   -d '{
-    "voyageData": {
-      "departurePort": {"code": "CNSHA", "name": "Shanghai"},
-      "destinationPort": {"code": "NLRTM", "name": "Rotterdam"},
-      "cargoType": "CONTAINER",
-      "cargoWeight": 25000,
-      "vesselType": "CONTAINER_SHIP",
-      "departureDate": "2024-08-15"
+  "responderIds": [
+    "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+"3fa85f64-5717-4562-b3fc-2c963f66afa7"
+  ],
+  "voyageData": {
+    "departurePort": {
+      "code": "SGSIN",
+      "name": "Singapore"
     },
-    "responderIds": ["company-2", "company-3"]
-  }'
+    "destinationPort": {
+      "code": "SGSIN",
+      "name": "Singapore"
+    },
+    "cargoType": "CONTAINER",
+    "cargoWeight": 0,
+    "vesselType": "CONTAINER_SHIP",
+    "departureDate": "2025-07-03T06:03:48.314Z"
+  }
+}'
 
 # Get quote requests (as requester)
-curl -X GET http://localhost:3000/api/quote-requests \
+curl -X 'GET' \
+  'http://localhost:8080/api/v1/quotes/quote-requests/my-requests' \
+  -H 'accept: application/json' \
   -H 'Authorization: Bearer <token>'
 
 # Get assigned quote requests (as responder)
-curl -X GET http://localhost:3000/api/quote-requests/assigned \
+curl -X 'GET' \
+  'http://localhost:8080/api/v1/quotes/quote-requests/my-pending-requests' \
+  -H 'accept: application/json' \
   -H 'Authorization: Bearer <token>'
 
-# Get quote request details
-curl -X GET http://localhost:3000/api/quote-requests/{requestId} \
+# Submit a response to quote request (as responder)
+curl -X 'PUT' \
+  'http://localhost:8080/api/v1/quotes/quote-requests/{quoteRequestId}/response' \
+  -H 'accept: application/json' \
+  -H 'Authorization: Bearer <token>' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "price": 50000,
+  "comments": "Price includes fuel surcharge and port fees"
+}'
+
+# Accept response offer for a quote request (as requester)
+curl -X 'PUT' \
+  'http://localhost:8080/api/v1/quotes/quote-requests/{quoteRequestId}/accept/{requesterId}' \
+  -H 'accept: application/json' \
   -H 'Authorization: Bearer <token>'
 ```
 
@@ -454,11 +507,9 @@ curl -X POST http://localhost:3000/api/quote-requests/{requestId}/responses/{res
 
 ### Notifications
 ```bash
-# Get notifications for current user
-curl -X GET http://localhost:3000/api/notifications \
-  -H 'Authorization: Bearer <token>'
-
-# Mark notification as read
-curl -X PATCH http://localhost:3000/api/notifications/{notificationId}/read \
+# Get notifications for current tenant
+curl -X 'GET' \
+  'http://localhost:8080/api/v1/notifications/notifications/tenant?limit=10&offset=0' \
+  -H 'accept: application/json' \
   -H 'Authorization: Bearer <token>'
 ```
